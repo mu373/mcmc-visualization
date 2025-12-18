@@ -19,7 +19,7 @@ interface TreeState {
 
 export class NUTS implements MCMCAlgorithm {
   name = 'No-U-Turn Sampler';
-  description = 'Automatically adapts trajectory length using no-U-turn criterion';
+  description = 'HMC variant that automatically determines optimal trajectory length by detecting when the path starts doubling back (U-turn)';
 
   // Algorithm parameters
   epsilon: number = 0.1;       // Step size
@@ -98,15 +98,13 @@ export class NUTS implements MCMCAlgorithm {
     v: number,  // direction: -1 or +1
     j: number,  // tree depth
     epsilon: number,
-    H0: number,
-    trajectory: Vector2[]
+    H0: number
   ): TreeState {
     if (j === 0) {
       // Base case: single leapfrog step
       const result = this.leapfrog(q, p, v * epsilon);
       const qPrime = result.q;
       const pPrime = result.p;
-      trajectory.push({ ...qPrime });
 
       const HPrime = this.hamiltonian(qPrime, pPrime);
       const nPrime = u <= Math.exp(H0 - HPrime) ? 1 : 0;
@@ -127,16 +125,16 @@ export class NUTS implements MCMCAlgorithm {
     }
 
     // Recursively build left subtree
-    const tree = this.buildTree(q, p, u, v, j - 1, epsilon, H0, trajectory);
+    const tree = this.buildTree(q, p, u, v, j - 1, epsilon, H0);
 
     if (!tree.sPrime) return tree;
 
     // Build right subtree from appropriate endpoint
     let tree2: TreeState;
     if (v === -1) {
-      tree2 = this.buildTree(tree.qMinus, tree.pMinus, u, v, j - 1, epsilon, H0, trajectory);
+      tree2 = this.buildTree(tree.qMinus, tree.pMinus, u, v, j - 1, epsilon, H0);
     } else {
-      tree2 = this.buildTree(tree.qPlus, tree.pPlus, u, v, j - 1, epsilon, H0, trajectory);
+      tree2 = this.buildTree(tree.qPlus, tree.pPlus, u, v, j - 1, epsilon, H0);
     }
 
     // Combine subtrees
@@ -192,19 +190,17 @@ export class NUTS implements MCMCAlgorithm {
     let s = true;
     let j = 0;
 
-    const trajectory: Vector2[] = [{ ...q0 }];
-
     while (s && j < this.maxTreeDepth) {
       // Choose direction
       const v = Math.random() < 0.5 ? -1 : 1;
 
       let tree: TreeState;
       if (v === -1) {
-        tree = this.buildTree(qMinus, pMinus, u, v, j, this.epsilon, H0, trajectory);
+        tree = this.buildTree(qMinus, pMinus, u, v, j, this.epsilon, H0);
         qMinus = tree.qMinus;
         pMinus = tree.pMinus;
       } else {
-        tree = this.buildTree(qPlus, pPlus, u, v, j, this.epsilon, H0, trajectory);
+        tree = this.buildTree(qPlus, pPlus, u, v, j, this.epsilon, H0);
         qPlus = tree.qPlus;
         pPlus = tree.pPlus;
       }
@@ -218,11 +214,8 @@ export class NUTS implements MCMCAlgorithm {
       j++;
     }
 
-    // Push trajectory for visualization
-    visualizer.queue.push({
-      type: 'trajectory',
-      path: trajectory,
-    });
+    // Note: Unlike HMC, NUTS trajectory is not a continuous path (tree grows in both directions)
+    // so we don't visualize it as a line - only the final proposal is shown
 
     // Push proposal
     visualizer.queue.push({

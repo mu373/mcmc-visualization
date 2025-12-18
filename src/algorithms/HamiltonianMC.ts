@@ -80,6 +80,7 @@ export class HamiltonianMC implements MCMCAlgorithm {
 
     // Sample momentum from N(0, I)
     let p: Vector2 = { x: randn(), y: randn() };
+    const initialMomentum = { ...p };
 
     // Store initial state
     const currentH = this.potentialEnergy(current) + this.kineticEnergy(p);
@@ -105,6 +106,7 @@ export class HamiltonianMC implements MCMCAlgorithm {
     visualizer.queue.push({
       type: 'trajectory',
       path: trajectory,
+      momentum: initialMomentum,
     });
 
     // Push proposal event

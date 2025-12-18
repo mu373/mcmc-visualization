@@ -7,9 +7,10 @@ interface TrajectoryProps {
   path: Vector2[] | null;
   distribution: Distribution;
   maxDensity: number;
+  showPoints?: boolean;
 }
 
-export function Trajectory({ path, distribution, maxDensity }: TrajectoryProps) {
+export function Trajectory({ path, distribution, maxDensity, showPoints = false }: TrajectoryProps) {
   if (!path || path.length < 2) return null;
 
   const linePoints: [number, number, number][] = [];
@@ -34,12 +35,20 @@ export function Trajectory({ path, distribution, maxDensity }: TrajectoryProps) 
   });
 
   return (
-    <Line
-      points={linePoints}
-      vertexColors={vertexColors as unknown as THREE.Color[]}
-      lineWidth={3}
-      transparent
-      opacity={0.9}
-    />
+    <group>
+      <Line
+        points={linePoints}
+        vertexColors={vertexColors as unknown as THREE.Color[]}
+        lineWidth={3}
+        transparent
+        opacity={0.9}
+      />
+      {showPoints && linePoints.map((point, i) => (
+        <mesh key={i} position={point}>
+          <sphereGeometry args={[0.04, 8, 8]} />
+          <meshBasicMaterial color={vertexColors[i]} />
+        </mesh>
+      ))}
+    </group>
   );
 }

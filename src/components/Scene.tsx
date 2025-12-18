@@ -10,6 +10,7 @@ import { ProposalLine } from './ProposalLine';
 import { SampleTrail } from './SampleTrail';
 import { SamplePoints } from './SamplePoints';
 import { Trajectory } from './Trajectory';
+import { MomentumVector } from './MomentumVector';
 import type { Simulation } from '../core/Simulation';
 
 interface SceneProps {
@@ -142,6 +143,16 @@ export function Scene({ simulation }: SceneProps) {
         path={visualizer.trajectoryPath}
         distribution={distribution}
         maxDensity={maxDensity}
+        showPoints={visualizer.showLeapfrogPoints}
+      />
+
+      {/* HMC momentum vector */}
+      <MomentumVector
+        position={visualizer.trajectoryPath?.[0] || null}
+        momentum={visualizer.momentum}
+        distribution={distribution}
+        maxDensity={maxDensity}
+        scale={0.5}
       />
 
       {/* Proposal line - from current to proposal */}

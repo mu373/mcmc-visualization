@@ -107,7 +107,7 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
     const rebuildParams = () => {
       // Remove old parameter folder and create new one
       paramFolder.dispose();
-      paramFolder = pane.addFolder({ title: 'Parameters', index: 2 });
+      paramFolder = pane.addFolder({ title: 'Parameters', index: 3 });
 
       const algorithm = simulation.algorithm;
       if (!algorithm) return;
@@ -122,19 +122,30 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
         }).on('change', (e: { value: number }) => {
           simulation.visualizer.proposalRadius = e.value;
         });
-      } else if (algorithm.name === 'Hamiltonian Monte Carlo') {
+        paramFolder.addBinding(simulation.visualizer, 'showSigmaRings', {
+          label: 'Show Step σ',
+        });
+      } else {
+        // Hide sigma ring for non-RWMH algorithms
+        simulation.visualizer.showSigmaRings = false;
+      }
+
+      if (algorithm.name === 'Hamiltonian Monte Carlo') {
         const hmc = algorithm as HamiltonianMC;
         paramFolder.addBinding(hmc, 'epsilon', {
           min: 0.01,
           max: 0.5,
           step: 0.01,
-          label: 'Step Size (ε)',
+          label: 'Leapfrog Δt',
         });
         paramFolder.addBinding(hmc, 'L', {
           min: 5,
           max: 100,
           step: 5,
-          label: 'Leapfrog Steps',
+          label: 'Leapfrog steps',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
+          label: 'Show leapfrog points',
         });
       } else if (algorithm.name === 'No-U-Turn Sampler') {
         const nuts = algorithm as NUTS;
@@ -214,10 +225,6 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       max: 20,
       step: 1,
       label: 'Contour Levels',
-    });
-
-    vizFolder.addBinding(simulation.visualizer, 'showSigmaRings', {
-      label: 'Show Step σ',
     });
 
     vizFolder.addBinding(simulation.visualizer, 'showGrid', {
