@@ -15,6 +15,10 @@ const algorithmDescriptions: Record<string, { title: string; description: string
     title: 'Hamiltonian MC',
     description: 'Uses gradient information to simulate physics-based dynamics for efficient exploration.',
   },
+  'No-U-Turn Sampler': {
+    title: 'NUTS',
+    description: 'Extends HMC by automatically determining optimal trajectory length, stopping when the path would start doubling back.',
+  },
   'Importance Sampling': {
     title: 'Importance Sampling',
     description: 'Draws weighted samples from a proposal distribution.',
