@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Text } from '@react-three/drei';
 import { Terrain } from './Terrain';
+import { ContourLines } from './ContourLines';
+import { SigmaRing } from './SigmaRings';
 import { Walker } from './Walker';
 import { ProposalGhost } from './ProposalGhost';
 import { ProposalLine } from './ProposalLine';
@@ -96,6 +98,25 @@ export function Scene({ simulation }: SceneProps) {
         opacity={visualizer.terrainOpacity}
         colorScheme={visualizer.colorScheme}
       />
+
+      {/* Contour lines */}
+      {visualizer.showContours && (
+        <ContourLines
+          distribution={distribution}
+          levels={visualizer.contourLevels}
+          maxDensity={maxDensity}
+        />
+      )}
+
+      {/* Sigma ring - show proposal step size around walker */}
+      {visualizer.showSigmaRings && visualizer.currentPosition && (
+        <SigmaRing
+          position={visualizer.currentPosition}
+          sigma={visualizer.proposalRadius || 0.5}
+          distribution={distribution}
+          maxDensity={maxDensity}
+        />
+      )}
 
       {/* Sample points - individual spheres at each sample */}
       <SamplePoints

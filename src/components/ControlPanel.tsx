@@ -152,6 +152,21 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Show Trail',
     });
 
+    vizFolder.addBinding(simulation.visualizer, 'showContours', {
+      label: 'Show Contours',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'contourLevels', {
+      min: 3,
+      max: 20,
+      step: 1,
+      label: 'Contour Levels',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'showSigmaRings', {
+      label: 'Show Step σ',
+    });
+
     vizFolder.addBinding(simulation.visualizer, 'histogramBins', {
       min: 10,
       max: 80,

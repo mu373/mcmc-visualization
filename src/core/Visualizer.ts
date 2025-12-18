@@ -26,7 +26,10 @@ export class Visualizer {
   private _maxTrailLength: number = 500;
   terrainOpacity: number = 0.85;
   showGrid: boolean = true;
-  showTrail: boolean = true;
+  showTrail: boolean = false;
+  showContours: boolean = true;
+  contourLevels: number = 10;
+  showSigmaRings: boolean = true;
   colorScheme: ColorScheme = 'plasma';
   histogramBins: number = 25;
   sphereSize: number = 1.0;
