@@ -66,6 +66,12 @@ export function vectorNegate(v: Vector2): Vector2 {
   return { x: -v.x, y: -v.y };
 }
 
+// Calculate z-height for 3D visualization (matches terrain height)
+export function calcZ(normalizedDensity: number, show3D: boolean): number {
+  if (!show3D) return 0;
+  return Math.pow(normalizedDensity, 0.8) * 3;
+}
+
 // Array utility
 declare global {
   interface Array<T> {

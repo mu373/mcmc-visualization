@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
+import { calcZ } from '../core/utils';
 
 interface ContourLinesProps {
   distribution: Distribution;
   levels?: number;
   resolution?: number;
   maxDensity: number;
+  show3D?: boolean;
 }
 
 export function ContourLines({
@@ -14,6 +16,7 @@ export function ContourLines({
   levels = 10,
   resolution = 100,
   maxDensity,
+  show3D = true,
 }: ContourLinesProps) {
   const contourGeometries = useMemo(() => {
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
@@ -61,7 +64,7 @@ export function ContourLines({
             if (p1 && p2) {
               // Calculate z height for contour line (same formula as Terrain)
               const normalizedDensity = threshold / maxDensity;
-              const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.02; // Slightly above terrain
+              const z = calcZ(normalizedDensity, show3D) + 0.01;
 
               // World X = distribution X, World Y = height, World Z = distribution Y
               points.push(new THREE.Vector3(p1.x, z, p1.y));
@@ -78,7 +81,7 @@ export function ContourLines({
     }
 
     return geometries;
-  }, [distribution, levels, resolution, maxDensity]);
+  }, [distribution, levels, resolution, maxDensity, show3D]);
 
   return (
     <group>

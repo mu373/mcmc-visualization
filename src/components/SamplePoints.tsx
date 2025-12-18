@@ -1,5 +1,5 @@
 import type { Distribution } from '../distributions/Distribution';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 
 interface SamplePointsProps {
   points: Vector2[];
@@ -7,9 +7,10 @@ interface SamplePointsProps {
   maxDensity: number;
   maxPoints?: number;
   sphereSize?: number;
+  show3D?: boolean;
 }
 
-export function SamplePoints({ points, distribution, maxDensity, maxPoints = 300, sphereSize = 1 }: SamplePointsProps) {
+export function SamplePoints({ points, distribution, maxDensity, maxPoints = 300, sphereSize = 1, show3D = true }: SamplePointsProps) {
   // Only show the last maxPoints samples for performance
   const start = Math.max(0, points.length - maxPoints);
   const visiblePoints = points.slice(start);
@@ -21,7 +22,7 @@ export function SamplePoints({ points, distribution, maxDensity, maxPoints = 300
       {visiblePoints.map((point, i) => {
         // Normalize density same as terrain
         const normalizedDensity = distribution.density(point) / maxDensity;
-        const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.15; // Slightly above terrain
+        const z = calcZ(normalizedDensity, show3D) + 0.01;
 
         // Opacity and size based on age: older = more transparent/smaller, newer = more opaque/larger
         const age = i / visiblePoints.length;

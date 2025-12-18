@@ -1,15 +1,16 @@
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 
 interface SampleTrailProps {
   points: Vector2[];
   distribution: Distribution;
   maxDensity: number;
+  show3D?: boolean;
 }
 
-export function SampleTrail({ points, distribution, maxDensity }: SampleTrailProps) {
+export function SampleTrail({ points, distribution, maxDensity, show3D = true }: SampleTrailProps) {
   // No useMemo - recalculate every render since points array is mutated
   if (points.length < 2) return null;
 
@@ -22,7 +23,7 @@ export function SampleTrail({ points, distribution, maxDensity }: SampleTrailPro
   points.forEach((p, i) => {
     // Normalize density same as terrain
     const normalizedDensity = distribution.density(p) / maxDensity;
-    const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.12;
+    const z = calcZ(normalizedDensity, show3D) + 0.01;
     linePoints.push([p.x, z, p.y]);
 
     // Fade from dark (old) to bright (new)

@@ -77,13 +77,15 @@ interface TerrainProps {
   resolution?: number;
   opacity?: number;
   colorScheme?: ColorScheme;
+  show3D?: boolean;
 }
 
 export function Terrain({
   distribution,
   resolution = 60,
   opacity = 0.85,
-  colorScheme = 'plasma'
+  colorScheme = 'plasma',
+  show3D = true
 }: TerrainProps) {
   // Calculate center offset for positioning
   const centerX = (distribution.bounds.xMin + distribution.bounds.xMax) / 2;
@@ -133,7 +135,7 @@ export function Terrain({
 
       // Set z height based on density with slight power curve for visual emphasis
       const normalizedDensity = density / maxDensity;
-      const z = Math.pow(normalizedDensity, 0.8) * 3;
+      const z = show3D ? Math.pow(normalizedDensity, 0.8) * 3 : 0;
       positions.setZ(i, z);
 
       // Apply colormap
@@ -145,7 +147,7 @@ export function Terrain({
     geometry.computeVertexNormals();
 
     return geometry;
-  }, [distribution, resolution, centerX, centerY, colormap]);
+  }, [distribution, resolution, centerX, centerY, colormap, show3D]);
 
   return (
     <mesh geometry={geometry} rotation-x={-Math.PI / 2} position={[centerX, 0, centerY]}>

@@ -2,16 +2,17 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 
 interface ProposalGhostProps {
   position: Vector2 | null;
   distribution: Distribution;
   maxDensity: number;
   visible?: boolean;
+  show3D?: boolean;
 }
 
-export function ProposalGhost({ position, distribution, maxDensity, visible = true }: ProposalGhostProps) {
+export function ProposalGhost({ position, distribution, maxDensity, visible = true, show3D = true }: ProposalGhostProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Animate pulse effect
@@ -25,7 +26,7 @@ export function ProposalGhost({ position, distribution, maxDensity, visible = tr
   if (!position || !visible) return null;
 
   const normalizedDensity = distribution.density(position) / maxDensity;
-  const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.2;
+  const z = calcZ(normalizedDensity, show3D) + 0.02;
 
   return (
     <mesh ref={meshRef} position={[position.x, z, position.y]}>

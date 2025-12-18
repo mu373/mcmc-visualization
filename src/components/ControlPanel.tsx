@@ -199,6 +199,10 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
     // Visual settings
     const vizFolder = pane.addFolder({ title: 'Visuals' });
 
+    vizFolder.addBinding(simulation.visualizer, 'show3D', {
+      label: 'Show 3D',
+    });
+
     vizFolder.addBinding(simulation.visualizer, 'colorScheme', {
       label: 'Color Scheme',
       options: {

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 
 interface MomentumVectorProps {
   position: Vector2 | null;
@@ -9,6 +9,7 @@ interface MomentumVectorProps {
   distribution: Distribution;
   maxDensity: number;
   scale?: number;
+  show3D?: boolean;
 }
 
 export function MomentumVector({
@@ -16,13 +17,14 @@ export function MomentumVector({
   momentum,
   distribution,
   maxDensity,
-  scale = 0.5
+  scale = 0.5,
+  show3D = true
 }: MomentumVectorProps) {
   const arrowGeometry = useMemo(() => {
     if (!position || !momentum) return null;
 
     const normalizedDensity = distribution.density(position) / maxDensity;
-    const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.15;
+    const z = calcZ(normalizedDensity, show3D);
 
     // Scale momentum for visualization
     const length = Math.sqrt(momentum.x * momentum.x + momentum.y * momentum.y);
@@ -30,10 +32,10 @@ export function MomentumVector({
 
     const scaledLength = length * scale;
     const dir = new THREE.Vector3(momentum.x / length, 0, momentum.y / length);
-    const origin = new THREE.Vector3(position.x, z + 0.1, position.y);
+    const origin = new THREE.Vector3(position.x, z + 0.02, position.y);
 
     return { origin, dir, length: scaledLength };
-  }, [position, momentum, distribution, maxDensity, scale]);
+  }, [position, momentum, distribution, maxDensity, scale, show3D]);
 
   if (!arrowGeometry) return null;
 

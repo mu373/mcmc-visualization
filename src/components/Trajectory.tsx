@@ -1,16 +1,17 @@
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 
 interface TrajectoryProps {
   path: Vector2[] | null;
   distribution: Distribution;
   maxDensity: number;
   showPoints?: boolean;
+  show3D?: boolean;
 }
 
-export function Trajectory({ path, distribution, maxDensity, showPoints = false }: TrajectoryProps) {
+export function Trajectory({ path, distribution, maxDensity, showPoints = false, show3D = true }: TrajectoryProps) {
   if (!path || path.length < 2) return null;
 
   const linePoints: [number, number, number][] = [];
@@ -21,7 +22,7 @@ export function Trajectory({ path, distribution, maxDensity, showPoints = false 
 
   path.forEach((p, i) => {
     const normalizedDensity = distribution.density(p) / maxDensity;
-    const z = Math.pow(normalizedDensity, 0.8) * 3 + 0.15;
+    const z = calcZ(normalizedDensity, show3D) + 0.01;
     linePoints.push([p.x, z, p.y]);
 
     // Gradient from start to end of trajectory

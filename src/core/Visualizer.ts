@@ -25,6 +25,7 @@ export class Visualizer {
   // Visual settings
   private _maxTrailLength: number = 500;
   terrainOpacity: number = 0.85;
+  show3D: boolean = true;
   showGrid: boolean = true;
   showTrail: boolean = false;
   showContours: boolean = true;

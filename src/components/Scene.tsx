@@ -99,6 +99,7 @@ export function Scene({ simulation }: SceneProps) {
         resolution={60}
         opacity={visualizer.terrainOpacity}
         colorScheme={visualizer.colorScheme}
+        show3D={visualizer.show3D}
       />
 
       {/* Contour lines */}
@@ -107,6 +108,7 @@ export function Scene({ simulation }: SceneProps) {
           distribution={distribution}
           levels={visualizer.contourLevels}
           maxDensity={maxDensity}
+          show3D={visualizer.show3D}
         />
       )}
 
@@ -117,6 +119,7 @@ export function Scene({ simulation }: SceneProps) {
           sigma={visualizer.proposalRadius || 0.5}
           distribution={distribution}
           maxDensity={maxDensity}
+          show3D={visualizer.show3D}
         />
       )}
 
@@ -127,6 +130,7 @@ export function Scene({ simulation }: SceneProps) {
         maxDensity={maxDensity}
         maxPoints={visualizer.maxTrailLength}
         sphereSize={visualizer.sphereSize}
+        show3D={visualizer.show3D}
       />
 
       {/* Sample trail - line connecting samples */}
@@ -135,6 +139,7 @@ export function Scene({ simulation }: SceneProps) {
           points={visualizer.acceptedSamples}
           distribution={distribution}
           maxDensity={maxDensity}
+          show3D={visualizer.show3D}
         />
       )}
 
@@ -144,6 +149,7 @@ export function Scene({ simulation }: SceneProps) {
         distribution={distribution}
         maxDensity={maxDensity}
         showPoints={visualizer.showLeapfrogPoints}
+        show3D={visualizer.show3D}
       />
 
       {/* HMC momentum vector */}
@@ -153,6 +159,7 @@ export function Scene({ simulation }: SceneProps) {
         distribution={distribution}
         maxDensity={maxDensity}
         scale={0.5}
+        show3D={visualizer.show3D}
       />
 
       {/* Proposal line - from current to proposal */}
@@ -161,6 +168,7 @@ export function Scene({ simulation }: SceneProps) {
         to={visualizer.proposalPosition}
         distribution={distribution}
         maxDensity={maxDensity}
+        show3D={visualizer.show3D}
       />
 
       {/* Proposal ghost - shows proposed position */}
@@ -168,6 +176,7 @@ export function Scene({ simulation }: SceneProps) {
         position={visualizer.proposalPosition}
         distribution={distribution}
         maxDensity={maxDensity}
+        show3D={visualizer.show3D}
       />
 
       {/* Walker - current position */}
@@ -177,6 +186,7 @@ export function Scene({ simulation }: SceneProps) {
         maxDensity={maxDensity}
         color={visualizer.flashAccept ? '#22c55e' : visualizer.flashReject ? '#ef4444' : '#4ade80'}
         sphereSize={visualizer.sphereSize}
+        show3D={visualizer.show3D}
       />
 
       {/* Camera controls */}

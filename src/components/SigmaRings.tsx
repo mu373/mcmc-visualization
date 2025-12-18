@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Line } from '@react-three/drei';
-import type { Vector2 } from '../core/utils';
+import { calcZ, type Vector2 } from '../core/utils';
 import type { Distribution } from '../distributions/Distribution';
 
 interface SigmaRingProps {
@@ -9,6 +9,7 @@ interface SigmaRingProps {
   distribution: Distribution;
   maxDensity: number;
   sigmaLevels?: number[];
+  show3D?: boolean;
 }
 
 export function SigmaRing({
@@ -17,6 +18,7 @@ export function SigmaRing({
   distribution,
   maxDensity,
   sigmaLevels = [1, 2, 3],
+  show3D = true,
 }: SigmaRingProps) {
   const rings = useMemo(() => {
     if (!position || sigma <= 0) return null;
@@ -34,14 +36,14 @@ export function SigmaRing({
         // Get height at this point on the terrain
         const density = distribution.density({ x, y: z });
         const normalizedDensity = density / maxDensity;
-        const y = Math.pow(normalizedDensity, 0.8) * 3 + 0.05;
+        const y = calcZ(normalizedDensity, show3D) + 0.01;
 
         points.push([x, y, z]);
       }
 
       return { level, points };
     });
-  }, [position, sigma, distribution, maxDensity, sigmaLevels]);
+  }, [position, sigma, distribution, maxDensity, sigmaLevels, show3D]);
 
   if (!rings) return null;
 
