@@ -5,7 +5,7 @@ import { InfoPanel } from './components/InfoPanel';
 import { MarginalHistograms } from './components/MarginalHistograms';
 import { Simulation } from './core/Simulation';
 import { StandardGaussian } from './distributions/StandardGaussian';
-import { RandomWalkMH } from './algorithms/RandomWalkMH';
+import { createAlgorithm } from './algorithms';
 
 function App() {
   const [simulation] = useState(() => {
@@ -16,7 +16,7 @@ function App() {
     sim.setDistribution(distribution);
 
     // Initialize with Random Walk Metropolis-Hastings algorithm
-    const algorithm = new RandomWalkMH();
+    const algorithm = createAlgorithm('rwmh');
     sim.setAlgorithm(algorithm);
 
     return sim;

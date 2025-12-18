@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Pane } from 'tweakpane';
 import type { Simulation } from '../core/Simulation';
+import { ALGORITHMS, createAlgorithm, type AlgorithmType } from '../algorithms';
 import type { RandomWalkMH } from '../algorithms/RandomWalkMH';
+import type { HamiltonianMC } from '../algorithms/HamiltonianMC';
+import type { NUTS } from '../algorithms/NUTS';
 import { StandardGaussian } from '../distributions/StandardGaussian';
 import { DonutDistribution } from '../distributions/DonutDistribution';
 import { BimodalDistribution } from '../distributions/BimodalDistribution';
@@ -83,39 +86,104 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Total Samples',
     });
 
-    // Algorithm parameters
+    // Algorithm selector and parameters
     const algFolder = pane.addFolder({ title: 'Algorithm' });
 
-    if (simulation.algorithm) {
-      const mh = simulation.algorithm as RandomWalkMH;
+    // Build algorithm options
+    const algorithmOptions: Record<string, AlgorithmType> = {};
+    ALGORITHMS.forEach(a => {
+      algorithmOptions[a.name] = a.key;
+    });
 
-      algFolder.addBinding(mh, 'sigma', {
-        min: 0.05,
-        max: 3,
-        step: 0.05,
-        label: 'Step Size (σ)',
-      });
+    const algParams = { selected: 'rwmh' as AlgorithmType };
 
-      // Acceptance rate monitor - create an object to hold the reactive value
-      const stats = { acceptanceRate: 0 };
+    // Parameter folder (will be rebuilt when algorithm changes)
+    let paramFolder = pane.addFolder({ title: 'Parameters' });
 
-      const acceptRateBinding = algFolder.addBinding(stats, 'acceptanceRate', {
+    // Stats for acceptance rate
+    const stats = { acceptanceRate: 0 };
+
+    // Function to rebuild parameter controls for current algorithm
+    const rebuildParams = () => {
+      // Remove old parameter folder and create new one
+      paramFolder.dispose();
+      paramFolder = pane.addFolder({ title: 'Parameters', index: 2 });
+
+      const algorithm = simulation.algorithm;
+      if (!algorithm) return;
+
+      if (algorithm.name === 'Random Walk Metropolis-Hastings') {
+        const mh = algorithm as RandomWalkMH;
+        paramFolder.addBinding(mh, 'sigma', {
+          min: 0.05,
+          max: 3,
+          step: 0.05,
+          label: 'Step Size (σ)',
+        }).on('change', (e: { value: number }) => {
+          simulation.visualizer.proposalRadius = e.value;
+        });
+      } else if (algorithm.name === 'Hamiltonian Monte Carlo') {
+        const hmc = algorithm as HamiltonianMC;
+        paramFolder.addBinding(hmc, 'epsilon', {
+          min: 0.01,
+          max: 0.5,
+          step: 0.01,
+          label: 'Step Size (ε)',
+        });
+        paramFolder.addBinding(hmc, 'L', {
+          min: 5,
+          max: 100,
+          step: 5,
+          label: 'Leapfrog Steps',
+        });
+      } else if (algorithm.name === 'No-U-Turn Sampler') {
+        const nuts = algorithm as NUTS;
+        paramFolder.addBinding(nuts, 'epsilon', {
+          min: 0.01,
+          max: 0.5,
+          step: 0.01,
+          label: 'Step Size (ε)',
+        });
+        paramFolder.addBinding(nuts, 'maxTreeDepth', {
+          min: 3,
+          max: 15,
+          step: 1,
+          label: 'Max Tree Depth',
+        });
+      }
+
+      // Add acceptance rate for all algorithms
+      paramFolder.addBinding(stats, 'acceptanceRate', {
         readonly: true,
         label: 'Accept Rate',
         format: (v: number) => `${(v * 100).toFixed(1)}%`,
       });
+    };
 
-      // Update acceptance rate periodically
-      const updateInterval = setInterval(() => {
-        if (mh.getAcceptanceRate) {
-          stats.acceptanceRate = mh.getAcceptanceRate();
-          acceptRateBinding.refresh();
-        }
-      }, 100);
+    // Algorithm selector
+    algFolder.addBinding(algParams, 'selected', {
+      label: 'Method',
+      options: algorithmOptions,
+    }).on('change', (e: { value: AlgorithmType }) => {
+      const newAlgorithm = createAlgorithm(e.value);
+      simulation.setAlgorithm(newAlgorithm);
+      simulation.reset();
+      rebuildParams();
+    });
 
-      // Store interval for cleanup
-      (pane as unknown as { _acceptRateInterval?: number })._acceptRateInterval = updateInterval;
-    }
+    // Initial parameter setup
+    rebuildParams();
+
+    // Update acceptance rate periodically
+    const updateInterval = setInterval(() => {
+      const alg = simulation.algorithm;
+      if (alg?.getAcceptanceRate) {
+        stats.acceptanceRate = alg.getAcceptanceRate();
+      }
+    }, 100);
+
+    // Store interval for cleanup
+    (pane as unknown as { _acceptRateInterval?: number })._acceptRateInterval = updateInterval;
 
     // Visual settings
     const vizFolder = pane.addFolder({ title: 'Visuals' });
@@ -123,9 +191,9 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
     vizFolder.addBinding(simulation.visualizer, 'colorScheme', {
       label: 'Color Scheme',
       options: {
+        'Terrain': 'terrain',
         'Plasma': 'plasma',
         'Viridis': 'viridis',
-        'Terrain': 'terrain',
         'Hot': 'hot',
       },
     });
@@ -135,21 +203,6 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       max: 1,
       step: 0.05,
       label: 'Terrain Opacity',
-    });
-
-    vizFolder.addBinding(simulation.visualizer, 'maxTrailLength', {
-      min: 10,
-      max: 2000,
-      step: 10,
-      label: 'Visible Samples',
-    });
-
-    vizFolder.addBinding(simulation.visualizer, 'showGrid', {
-      label: 'Show Grid',
-    });
-
-    vizFolder.addBinding(simulation.visualizer, 'showTrail', {
-      label: 'Show Trail',
     });
 
     vizFolder.addBinding(simulation.visualizer, 'showContours', {
@@ -167,11 +220,8 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Show Step σ',
     });
 
-    vizFolder.addBinding(simulation.visualizer, 'histogramBins', {
-      min: 10,
-      max: 80,
-      step: 5,
-      label: 'Histogram Bins',
+    vizFolder.addBinding(simulation.visualizer, 'showGrid', {
+      label: 'Show Grid',
     });
 
     vizFolder.addBinding(simulation.visualizer, 'sphereSize', {
@@ -179,6 +229,24 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       max: 3,
       step: 0.1,
       label: 'Sphere Size',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'showTrail', {
+      label: 'Show Trail',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'maxTrailLength', {
+      min: 10,
+      max: 2000,
+      step: 10,
+      label: 'Visible Samples',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'histogramBins', {
+      min: 10,
+      max: 80,
+      step: 5,
+      label: 'Histogram Bins',
     });
 
     return () => {

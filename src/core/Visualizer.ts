@@ -30,7 +30,7 @@ export class Visualizer {
   showContours: boolean = true;
   contourLevels: number = 10;
   showSigmaRings: boolean = true;
-  colorScheme: ColorScheme = 'plasma';
+  colorScheme: ColorScheme = 'terrain';
   histogramBins: number = 25;
   sphereSize: number = 1.0;
 
@@ -71,12 +71,14 @@ export class Visualizer {
         }
 
         this.proposalPosition = null;
+        this.trajectoryPath = null;  // Clear trajectory after decision
         this.flashAccept = true;
         setTimeout(() => (this.flashAccept = false), 200);
         break;
 
       case 'reject':
         this.proposalPosition = null;
+        this.trajectoryPath = null;  // Clear trajectory after decision
         this.flashReject = true;
         setTimeout(() => (this.flashReject = false), 200);
         break;

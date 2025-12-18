@@ -58,6 +58,14 @@ export function vectorScale(v: Vector2, scale: number): Vector2 {
   return { x: v.x * scale, y: v.y * scale };
 }
 
+export function vectorSubtract(v1: Vector2, v2: Vector2): Vector2 {
+  return { x: v1.x - v2.x, y: v1.y - v2.y };
+}
+
+export function vectorNegate(v: Vector2): Vector2 {
+  return { x: -v.x, y: -v.y };
+}
+
 // Array utility
 declare global {
   interface Array<T> {

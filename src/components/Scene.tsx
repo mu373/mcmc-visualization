@@ -9,6 +9,7 @@ import { ProposalGhost } from './ProposalGhost';
 import { ProposalLine } from './ProposalLine';
 import { SampleTrail } from './SampleTrail';
 import { SamplePoints } from './SamplePoints';
+import { Trajectory } from './Trajectory';
 import type { Simulation } from '../core/Simulation';
 
 interface SceneProps {
@@ -135,6 +136,13 @@ export function Scene({ simulation }: SceneProps) {
           maxDensity={maxDensity}
         />
       )}
+
+      {/* HMC/NUTS trajectory path */}
+      <Trajectory
+        path={visualizer.trajectoryPath}
+        distribution={distribution}
+        maxDensity={maxDensity}
+      />
 
       {/* Proposal line - from current to proposal */}
       <ProposalLine

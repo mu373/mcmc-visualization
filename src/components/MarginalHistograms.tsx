@@ -84,13 +84,13 @@ export function MarginalHistograms({ samples, sampleCount, bins = 40 }: Marginal
       });
 
       // Label
-      ctx.fillStyle = '#888';
-      ctx.font = 'bold 11px monospace';
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px monospace';
       ctx.fillText(label, 8, yOffset + 12);
 
       // Axis labels
-      ctx.fillStyle = '#555';
-      ctx.font = '9px monospace';
+      ctx.fillStyle = '#aaa';
+      ctx.font = '10px monospace';
       ctx.fillText(data.min.toFixed(1), startX, yOffset + histHeight + 10);
       ctx.textAlign = 'right';
       ctx.fillText(data.max.toFixed(1), width - 8, yOffset + histHeight + 10);
@@ -104,8 +104,8 @@ export function MarginalHistograms({ samples, sampleCount, bins = 40 }: Marginal
     drawHist(yData, histHeight + 20, 'Y');
 
     // Sample count
-    ctx.fillStyle = '#444';
-    ctx.font = '9px monospace';
+    ctx.fillStyle = '#ccc';
+    ctx.font = '10px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(`n=${samples.length}`, width - 8, 12);
     ctx.textAlign = 'left';

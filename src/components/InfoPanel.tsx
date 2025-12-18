@@ -8,7 +8,7 @@ interface InfoPanelProps {
 
 const algorithmDescriptions: Record<string, { title: string; description: string }> = {
   'Random Walk Metropolis-Hastings': {
-    title: 'Random Walk MH',
+    title: 'Metropolis Hastings',
     description: 'Proposes new positions by taking random steps. Step size (σ) controls exploration vs acceptance trade-off.',
   },
   'Hamiltonian Monte Carlo': {
@@ -48,14 +48,14 @@ export function InfoPanel({ algorithm, samples, acceptanceRate }: InfoPanelProps
         fontSize: 13,
         fontWeight: 600,
         marginBottom: 6,
-        color: '#ccc',
+        color: '#fff',
       }}>
         {info.title}
       </div>
 
       <div style={{
-        fontSize: 11,
-        color: '#666',
+        fontSize: 12,
+        color: '#ddd',
         lineHeight: 1.4,
         marginBottom: 10,
       }}>
@@ -79,10 +79,10 @@ export function InfoPanel({ algorithm, samples, acceptanceRate }: InfoPanelProps
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontSize: 9, color: '#555', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5 }}>
         {label}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'monospace' }}>
+      <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
         {value}
       </div>
     </div>
