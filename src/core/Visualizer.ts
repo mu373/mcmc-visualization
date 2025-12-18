@@ -1,0 +1,105 @@
+import type { Vector2 } from './utils';
+
+export type VisualizationEvent =
+  | { type: 'proposal'; from: Vector2; to: Vector2; radius?: number }
+  | { type: 'accept'; position: Vector2 }
+  | { type: 'reject'; position: Vector2 }
+  | { type: 'trajectory'; path: Vector2[]; momentum?: Vector2 }
+  | { type: 'gradient'; position: Vector2; direction: Vector2 }
+  | { type: 'particles'; points: Vector2[]; weights: number[] };
+
+export type ColorScheme = 'plasma' | 'viridis' | 'terrain' | 'hot';
+
+export class Visualizer {
+  queue: VisualizationEvent[] = [];
+
+  // Current visualization state
+  currentPosition: Vector2 | null = null;
+  proposalPosition: Vector2 | null = null;
+  proposalRadius: number = 0;
+  acceptedSamples: Vector2[] = [];      // Limited for visual trail
+  allSamples: Vector2[] = [];           // All samples for statistics
+  trajectoryPath: Vector2[] | null = null;
+  momentum: Vector2 | null = null;
+
+  // Visual settings
+  private _maxTrailLength: number = 500;
+  terrainOpacity: number = 0.85;
+  showGrid: boolean = true;
+  showTrail: boolean = true;
+  colorScheme: ColorScheme = 'plasma';
+  histogramBins: number = 25;
+  sphereSize: number = 1.0;
+
+  get maxTrailLength(): number {
+    return this._maxTrailLength;
+  }
+
+  set maxTrailLength(value: number) {
+    this._maxTrailLength = value;
+    // Immediately trim if needed
+    while (this.acceptedSamples.length > value) {
+      this.acceptedSamples.shift();
+    }
+  }
+
+  // Flash effect states
+  flashAccept: boolean = false;
+  flashReject: boolean = false;
+
+  dequeue(): void {
+    const event = this.queue.shift();
+    if (!event) return;
+
+    switch (event.type) {
+      case 'proposal':
+        this.proposalPosition = event.to;
+        this.proposalRadius = event.radius || 0;
+        break;
+
+      case 'accept':
+        this.currentPosition = event.position;
+        this.allSamples.push(event.position);
+        this.acceptedSamples.push(event.position);
+
+        // Limit visual trail length
+        if (this.acceptedSamples.length > this._maxTrailLength) {
+          this.acceptedSamples.shift();
+        }
+
+        this.proposalPosition = null;
+        this.flashAccept = true;
+        setTimeout(() => (this.flashAccept = false), 200);
+        break;
+
+      case 'reject':
+        this.proposalPosition = null;
+        this.flashReject = true;
+        setTimeout(() => (this.flashReject = false), 200);
+        break;
+
+      case 'trajectory':
+        this.trajectoryPath = event.path;
+        this.momentum = event.momentum || null;
+        break;
+
+      case 'gradient':
+        // Handle gradient visualization
+        break;
+
+      case 'particles':
+        // Handle particle system (for Importance Sampling)
+        break;
+    }
+  }
+
+  reset(): void {
+    this.queue = [];
+    this.currentPosition = null;
+    this.proposalPosition = null;
+    this.acceptedSamples = [];
+    this.allSamples = [];
+    this.trajectoryPath = null;
+    this.momentum = null;
+  }
+}
