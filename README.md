@@ -27,6 +27,11 @@ https://mcmc-visualization.vercel.app/
 ## Keyboard shortcuts
 - Space: Play/Pause
 - N: Step
+- R: Auto rotate toggle
+- C: Contour toggle
+- G: Grid toggle
+- #: 3D toggle
+- Shift+C: Toggle control panel
 
 ## Development
 

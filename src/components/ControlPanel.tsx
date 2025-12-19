@@ -35,12 +35,20 @@ const DISTRIBUTIONS = {
 interface ControlPanelProps {
   simulation: Simulation;
   onDistributionChange?: () => void;
+  collapsed?: boolean;
 }
 
-export function ControlPanel({ simulation, onDistributionChange }: ControlPanelProps) {
+export function ControlPanel({ simulation, onDistributionChange, collapsed = false }: ControlPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paneRef = useRef<any>(null);
+
+  // Handle collapsed state changes
+  useEffect(() => {
+    if (paneRef.current) {
+      paneRef.current.expanded = !collapsed;
+    }
+  }, [collapsed]);
 
   useEffect(() => {
     if (!containerRef.current) return;

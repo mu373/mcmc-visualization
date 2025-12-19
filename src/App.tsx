@@ -23,6 +23,9 @@ function App() {
     return sim;
   });
 
+  // Control panel collapsed state
+  const [controlPanelCollapsed, setControlPanelCollapsed] = useState(false);
+
   // Force re-render when visualization state changes
   const [, setTick] = useState(0);
 
@@ -69,6 +72,17 @@ function App() {
         simulation.toggle();
       } else if (e.code === 'KeyN') {
         simulation.step();
+      } else if (e.code === 'KeyR') {
+        simulation.visualizer.autoRotate = !simulation.visualizer.autoRotate;
+      } else if (e.code === 'KeyC' && e.shiftKey) {
+        setControlPanelCollapsed(prev => !prev);
+      } else if (e.code === 'KeyC' && !e.shiftKey) {
+        simulation.visualizer.showContours = !simulation.visualizer.showContours;
+      } else if (e.code === 'Digit3' && e.shiftKey) {
+        // # key (Shift+3)
+        simulation.visualizer.show3D = !simulation.visualizer.show3D;
+      } else if (e.code === 'KeyG') {
+        simulation.visualizer.showGrid = !simulation.visualizer.showGrid;
       }
     };
 
@@ -82,7 +96,7 @@ function App() {
   return (
     <>
       <Scene simulation={simulation} />
-      <ControlPanel simulation={simulation} />
+      <ControlPanel simulation={simulation} collapsed={controlPanelCollapsed} />
       <InfoPanel
         algorithm={simulation.algorithm}
         samples={simulation.visualizer.allSamples.length}
