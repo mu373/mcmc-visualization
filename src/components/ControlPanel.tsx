@@ -108,6 +108,30 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
       simulation.reset();
     });
 
+    simFolder.addButton({ title: 'Export samples' }).on('click', () => {
+      const samples = simulation.visualizer.allSamples;
+      if (samples.length === 0) return;
+
+      // Build CSV content
+      const header = 'x,y\n';
+      const rows = samples.map(s => `${s.x},${s.y}`).join('\n');
+      const csv = header + rows;
+
+      // Build filename with distribution and algorithm
+      const distName = simulation.distribution?.name?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
+      const algName = simulation.algorithm?.name?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
+      const filename = `${distName}_${algName}_n${samples.length}.csv`;
+
+      // Trigger download
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
     simFolder.addBinding(simulation, 'delay', {
       min: 0,
       max: 2000,
