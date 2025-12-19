@@ -55,6 +55,8 @@ export class Visualizer {
   autoRotate: boolean = true;
   showHeatmap: boolean = true;
   showHistogram: boolean = true;
+  burnIn: number = 200;
+  excludeBurnIn: boolean = true;
 
   get maxTrailLength(): number {
     return this._maxTrailLength;

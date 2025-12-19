@@ -10,6 +10,8 @@ interface HeatmapPanelProps {
   bins?: number;
   colorScheme?: ColorScheme;
   scale?: number;
+  burnIn?: number;
+  excludeBurnIn?: boolean;
 }
 
 const BASE_CANVAS_SIZE = 160;
@@ -44,9 +46,14 @@ function interpolateEdge(
   return { x: ax + t * (bx - ax), y: ay + t * (by - ay) };
 }
 
-export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain', scale = 1 }: HeatmapPanelProps) {
+export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain', scale = 1, burnIn = 0, excludeBurnIn = false }: HeatmapPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maxCanvasSize = BASE_CANVAS_SIZE * scale;
+
+  // Filter samples based on burn-in settings
+  // During burn-in: show all samples. After burn-in: exclude burn-in samples
+  const isInBurnIn = samples.length < burnIn;
+  const effectiveSamples = (excludeBurnIn && !isInBurnIn) ? samples.slice(burnIn) : samples;
 
   // Calculate canvas dimensions based on distribution aspect ratio
   const { xMin, xMax, yMin, yMax } = distribution.bounds;
@@ -85,7 +92,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     const hist = new Array(bins).fill(null).map(() => new Array(bins).fill(0));
     let maxCount = 0;
 
-    samples.forEach(s => {
+    effectiveSamples.forEach(s => {
       const binX = Math.floor((s.x - xMin) / xRange * bins);
       const binY = Math.floor((s.y - yMin) / yRange * bins);
       if (binX >= 0 && binX < bins && binY >= 0 && binY < bins) {
@@ -186,7 +193,16 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     ctx.fillText('Y', 4, canvasHeight / 2);
     ctx.textBaseline = 'alphabetic';
 
-  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange, scale, maxCanvasSize]);
+    // Show burn-in indicator
+    if (isInBurnIn && burnIn > 0) {
+      ctx.fillStyle = '#f97316';
+      ctx.font = '10px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Burn-in (${samples.length}/${burnIn})`, canvasWidth - 4, 12);
+      ctx.textAlign = 'left';
+    }
+
+  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange, scale, maxCanvasSize, effectiveSamples, isInBurnIn, burnIn]);
 
   const containerWidth = 220 * scale + 16; // Match histogram width + padding
 

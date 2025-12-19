@@ -8,15 +8,22 @@ interface MarginalHistogramsProps {
   distribution: Distribution;
   bins?: number;
   scale?: number;
+  burnIn?: number;
+  excludeBurnIn?: boolean;
 }
 
 const BASE_WIDTH = 220;
 const BASE_HEIGHT = 160;
 
-export function MarginalHistograms({ samples, sampleCount, distribution, bins = 40, scale = 1 }: MarginalHistogramsProps) {
+export function MarginalHistograms({ samples, sampleCount, distribution, bins = 40, scale = 1, burnIn = 0, excludeBurnIn = false }: MarginalHistogramsProps) {
   const CANVAS_WIDTH = BASE_WIDTH * scale;
   const CANVAS_HEIGHT = BASE_HEIGHT * scale;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Filter samples based on burn-in settings
+  // During burn-in: show all samples. After burn-in: exclude burn-in samples
+  const isInBurnIn = samples.length < burnIn;
+  const effectiveSamples = (excludeBurnIn && !isInBurnIn) ? samples.slice(burnIn) : samples;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -133,10 +140,10 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     };
 
     // Compute histograms if we have samples (using separate ranges for X and Y)
-    const xValues = samples.map(s => s.x);
-    const yValues = samples.map(s => s.y);
-    const xData = samples.length > 0 ? computeHist(xValues, xMin, xMax) : null;
-    const yData = samples.length > 0 ? computeHist(yValues, yMin, yMax) : null;
+    const xValues = effectiveSamples.map(s => s.x);
+    const yValues = effectiveSamples.map(s => s.y);
+    const xData = effectiveSamples.length > 0 ? computeHist(xValues, xMin, xMax) : null;
+    const yData = effectiveSamples.length > 0 ? computeHist(yValues, yMin, yMax) : null;
 
     // Draw X histogram (top) - uses X range
     drawPanel(5, 'X', (x) => distribution.marginalX(x), xData, xMin, xMax);
@@ -148,10 +155,15 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     ctx.fillStyle = '#666';
     ctx.font = '10px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`n=${samples.length}`, width - 8, 12);
+    ctx.fillText(`n=${effectiveSamples.length}`, width - 8, 12);
+    // Show burn-in indicator
+    if (isInBurnIn && burnIn > 0) {
+      ctx.fillStyle = '#f97316';
+      ctx.fillText(`Burn-in (${samples.length}/${burnIn})`, width - 8, 24);
+    }
     ctx.textAlign = 'left';
 
-  }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT]);
+  }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT, effectiveSamples, isInBurnIn, burnIn]);
 
 
   return (

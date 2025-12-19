@@ -47,6 +47,13 @@ export function Scene({ simulation }: SceneProps) {
     return max || 1;
   }, [distribution]);
 
+  // Filter samples based on burn-in settings
+  // During burn-in: show all samples. After burn-in: exclude burn-in samples
+  const isInBurnIn = visualizer.allSamples.length < visualizer.burnIn;
+  const effectiveSamples = (visualizer.excludeBurnIn && !isInBurnIn)
+    ? visualizer.acceptedSamples.slice(Math.max(0, visualizer.burnIn - (visualizer.allSamples.length - visualizer.acceptedSamples.length)))
+    : visualizer.acceptedSamples;
+
   if (!distribution) {
     return (
       <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -157,7 +164,7 @@ export function Scene({ simulation }: SceneProps) {
 
       {/* Sample points - individual spheres at each sample */}
       <SamplePoints
-        points={visualizer.acceptedSamples}
+        points={effectiveSamples}
         distribution={distribution}
         maxDensity={maxDensity}
         maxPoints={visualizer.maxTrailLength}
@@ -168,7 +175,7 @@ export function Scene({ simulation }: SceneProps) {
       {/* Sample trail - line connecting samples */}
       {visualizer.showTrail && (
         <SampleTrail
-          points={visualizer.acceptedSamples}
+          points={effectiveSamples}
           distribution={distribution}
           maxDensity={maxDensity}
           show3D={visualizer.show3D}

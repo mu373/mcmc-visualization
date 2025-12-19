@@ -144,6 +144,8 @@ function App() {
               bins={simulation.visualizer.histogramBins}
               colorScheme={simulation.visualizer.colorScheme}
               scale={panelScale}
+              burnIn={simulation.visualizer.burnIn}
+              excludeBurnIn={simulation.visualizer.excludeBurnIn}
             />
           )}
           {simulation.visualizer.showHistogram && (
@@ -153,6 +155,8 @@ function App() {
               distribution={simulation.distribution!}
               bins={simulation.visualizer.histogramBins}
               scale={panelScale}
+              burnIn={simulation.visualizer.burnIn}
+              excludeBurnIn={simulation.visualizer.excludeBurnIn}
             />
           )}
         </div>

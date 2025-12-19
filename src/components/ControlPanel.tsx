@@ -374,6 +374,17 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
       label: 'Visible Samples',
     });
 
+    vizFolder.addBinding(simulation.visualizer, 'excludeBurnIn', {
+      label: 'Exclude Burn-in',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'burnIn', {
+      min: 0,
+      max: 1000,
+      step: 10,
+      label: 'Burn-in',
+    });
+
     // UI panels
     vizFolder.addBinding(simulation.visualizer, 'showHeatmap', {
       label: 'Show Heatmap',
