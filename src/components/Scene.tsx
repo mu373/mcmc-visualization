@@ -57,7 +57,7 @@ export function Scene({ simulation }: SceneProps) {
 
   return (
     <Canvas
-      camera={{ position: [8, 8, 8], fov: 50 }}
+      camera={{ position: isMobile ? [12, 12, 12] : [8, 8, 8], fov: 50 }}
       style={{ width: '100%', height: '100vh', background: '#0a0a0a' }}
     >
       {/* Lighting */}

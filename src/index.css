@@ -66,10 +66,25 @@ canvas {
   font-weight: bold !important;
 }
 
-/* Smaller control panel on mobile when collapsed */
+/* Control panel sizing on mobile */
 @media (max-width: 767px) {
+  .tp-rotv {
+    width: calc(100vw - 40px) !important;
+    max-width: 240px !important;
+  }
   .tp-rotv:not(.tp-rotv-expanded) {
-    width: 50px !important;
+    width: 56px !important;
+    border: none !important;
+  }
+  /* Center the button when collapsed */
+  .tp-rotv:not(.tp-rotv-expanded) .tp-rotv_b {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  /* Hide title bar when collapsed */
+  .tp-rotv:not(.tp-rotv-expanded) .tp-rotv_t {
+    display: none !important;
   }
 }
 
