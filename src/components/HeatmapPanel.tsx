@@ -11,7 +11,7 @@ interface HeatmapPanelProps {
   colorScheme?: ColorScheme;
 }
 
-const CANVAS_SIZE = 160;
+const MAX_CANVAS_SIZE = 160;
 
 // Marching squares edge lookup table
 type Edge = 0 | 1 | 2 | 3; // 0=bottom, 1=right, 2=top, 3=left
@@ -46,6 +46,22 @@ function interpolateEdge(
 export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain' }: HeatmapPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Calculate canvas dimensions based on distribution aspect ratio
+  const { xMin, xMax, yMin, yMax } = distribution.bounds;
+  const xRange = xMax - xMin;
+  const yRange = yMax - yMin;
+  const aspectRatio = xRange / yRange;
+
+  // Determine canvas dimensions (X is horizontal, Y is vertical)
+  let canvasWidth: number, canvasHeight: number;
+  if (aspectRatio >= 1) {
+    canvasWidth = MAX_CANVAS_SIZE;
+    canvasHeight = MAX_CANVAS_SIZE / aspectRatio;
+  } else {
+    canvasHeight = MAX_CANVAS_SIZE;
+    canvasWidth = MAX_CANVAS_SIZE * aspectRatio;
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -55,19 +71,13 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
 
     // Handle high-DPI displays
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = CANVAS_SIZE * dpr;
-    canvas.height = CANVAS_SIZE * dpr;
+    canvas.width = canvasWidth * dpr;
+    canvas.height = canvasHeight * dpr;
     ctx.scale(dpr, dpr);
-
-    const size = CANVAS_SIZE;
 
     // Clear canvas
     ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, size, size);
-
-    const { xMin, xMax, yMin, yMax } = distribution.bounds;
-    const xRange = xMax - xMin;
-    const yRange = yMax - yMin;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     // Create 2D histogram
     const hist = new Array(bins).fill(null).map(() => new Array(bins).fill(0));
@@ -83,7 +93,8 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     });
 
     // Draw heatmap
-    const cellSize = size / bins;
+    const cellWidth = canvasWidth / bins;
+    const cellHeight = canvasHeight / bins;
 
     for (let i = 0; i < bins; i++) {
       for (let j = 0; j < bins; j++) {
@@ -96,7 +107,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
           const b = Math.floor(255 * color.b);
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
           // X horizontal, Y vertical (flipped to match 3D top view)
-          ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+          ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
         }
       }
     }
@@ -150,10 +161,10 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
             const p2 = interpolateEdge(e2, i, j, contourResolution, v00, v10, v01, v11, threshold);
             if (p1 && p2) {
               // X horizontal, Y vertical (flipped to match 3D top view)
-              const px1 = p1.x * size;
-              const py1 = p1.y * size;
-              const px2 = p2.x * size;
-              const py2 = p2.y * size;
+              const px1 = p1.x * canvasWidth;
+              const py1 = p1.y * canvasHeight;
+              const px2 = p2.x * canvasWidth;
+              const py2 = p2.y * canvasHeight;
               ctx.moveTo(px1, py1);
               ctx.lineTo(px2, py2);
             }
@@ -167,13 +178,13 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     ctx.fillStyle = '#666';
     ctx.font = '12px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('X', size / 2, size - 4);
+    ctx.fillText('X', canvasWidth / 2, canvasHeight - 4);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Y', 4, size / 2);
+    ctx.fillText('Y', 4, canvasHeight / 2);
     ctx.textBaseline = 'alphabetic';
 
-  }, [samples, sampleCount, distribution, bins, colorScheme]);
+  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange]);
 
   return (
     <div
@@ -194,8 +205,8 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
         style={{
           display: 'block',
           borderRadius: 4,
-          width: CANVAS_SIZE,
-          height: CANVAS_SIZE,
+          width: canvasWidth,
+          height: canvasHeight,
         }}
       />
     </div>
