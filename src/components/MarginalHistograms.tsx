@@ -98,8 +98,8 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
 
       if (maxPdf > 0) {
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 200, 100, 0.9)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 1;
 
         for (let i = 0; i <= numPoints; i++) {
           const x = startX + (i / numPoints) * chartWidth;
