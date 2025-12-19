@@ -5,26 +5,43 @@ import { InfoPanel } from './components/InfoPanel';
 import { MarginalHistograms } from './components/MarginalHistograms';
 import { HeatmapPanel } from './components/HeatmapPanel';
 import { Simulation } from './core/Simulation';
-import { StandardGaussian } from './distributions/StandardGaussian';
+import { MultimodalDistribution } from './distributions/MultimodalDistribution';
 import { createAlgorithm } from './algorithms';
 
 function App() {
   const [simulation] = useState(() => {
     const sim = new Simulation();
 
-    // Initialize with a standard Gaussian distribution
-    const distribution = new StandardGaussian();
+    // Initialize with multimodal distribution
+    const distribution = new MultimodalDistribution();
     sim.setDistribution(distribution);
 
-    // Initialize with Random Walk Metropolis-Hastings algorithm
-    const algorithm = createAlgorithm('rwmh');
+    // Initialize with Hamiltonian Monte Carlo algorithm
+    const algorithm = createAlgorithm('hmc');
     sim.setAlgorithm(algorithm);
+    sim.delay = 900; // Slower default for HMC to see trajectory animation
+
+    // Hide heatmap on mobile by default
+    if (window.innerWidth < 768) {
+      sim.visualizer.showHeatmap = false;
+    }
 
     return sim;
   });
 
-  // Control panel collapsed state
-  const [controlPanelCollapsed, setControlPanelCollapsed] = useState(false);
+  // Control panel collapsed state (collapsed by default on mobile)
+  const [controlPanelCollapsed, setControlPanelCollapsed] = useState(() => window.innerWidth < 768);
+
+  // Responsive panel scale
+  const [panelScale, setPanelScale] = useState(() => window.innerWidth < 768 ? 0.6 : 1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setPanelScale(window.innerWidth < 768 ? 0.6 : 1);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Force re-render when visualization state changes
   const [, setTick] = useState(0);
@@ -36,6 +53,11 @@ function App() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-start simulation on mount
+  useEffect(() => {
+    simulation.play();
+  }, [simulation]);
 
   // Trajectory animation driver - runs independently at configurable speed
   useEffect(() => {
@@ -121,6 +143,7 @@ function App() {
               distribution={simulation.distribution!}
               bins={simulation.visualizer.histogramBins}
               colorScheme={simulation.visualizer.colorScheme}
+              scale={panelScale}
             />
           )}
           {simulation.visualizer.showHistogram && (
@@ -129,6 +152,7 @@ function App() {
               sampleCount={simulation.visualizer.allSamples.length}
               distribution={simulation.distribution!}
               bins={simulation.visualizer.histogramBins}
+              scale={panelScale}
             />
           )}
         </div>

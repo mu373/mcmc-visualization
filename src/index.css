@@ -65,3 +65,11 @@ canvas {
 .tp-fldv_t {
   font-weight: bold !important;
 }
+
+/* Smaller control panel on mobile when collapsed */
+@media (max-width: 767px) {
+  .tp-rotv:not(.tp-rotv-expanded) {
+    width: 50px !important;
+  }
+}
+

@@ -9,9 +9,10 @@ interface HeatmapPanelProps {
   distribution: Distribution;
   bins?: number;
   colorScheme?: ColorScheme;
+  scale?: number;
 }
 
-const MAX_CANVAS_SIZE = 160;
+const BASE_CANVAS_SIZE = 160;
 
 // Marching squares edge lookup table
 type Edge = 0 | 1 | 2 | 3; // 0=bottom, 1=right, 2=top, 3=left
@@ -43,8 +44,9 @@ function interpolateEdge(
   return { x: ax + t * (bx - ax), y: ay + t * (by - ay) };
 }
 
-export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain' }: HeatmapPanelProps) {
+export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain', scale = 1 }: HeatmapPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const maxCanvasSize = BASE_CANVAS_SIZE * scale;
 
   // Calculate canvas dimensions based on distribution aspect ratio
   const { xMin, xMax, yMin, yMax } = distribution.bounds;
@@ -55,11 +57,11 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
   // Determine canvas dimensions (X is horizontal, Y is vertical)
   let canvasWidth: number, canvasHeight: number;
   if (aspectRatio >= 1) {
-    canvasWidth = MAX_CANVAS_SIZE;
-    canvasHeight = MAX_CANVAS_SIZE / aspectRatio;
+    canvasWidth = maxCanvasSize;
+    canvasHeight = maxCanvasSize / aspectRatio;
   } else {
-    canvasHeight = MAX_CANVAS_SIZE;
-    canvasWidth = MAX_CANVAS_SIZE * aspectRatio;
+    canvasHeight = maxCanvasSize;
+    canvasWidth = maxCanvasSize * aspectRatio;
   }
 
   useEffect(() => {
@@ -184,7 +186,9 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     ctx.fillText('Y', 4, canvasHeight / 2);
     ctx.textBaseline = 'alphabetic';
 
-  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange]);
+  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange, scale, maxCanvasSize]);
+
+  const containerWidth = 220 * scale + 16; // Match histogram width + padding
 
   return (
     <div
@@ -193,7 +197,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
         borderRadius: 8,
         padding: 8,
         border: '1px solid #222',
-        width: 220 + 16, // Match histogram width (220) + padding (8*2)
+        width: containerWidth,
         boxSizing: 'border-box',
         display: 'flex',
         justifyContent: 'center',

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Text, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import { Terrain } from './Terrain';
@@ -21,6 +21,14 @@ interface SceneProps {
 
 export function Scene({ simulation }: SceneProps) {
   const { distribution, visualizer } = simulation;
+
+  // Responsive gizmo size
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Compute maxDensity for consistent height mapping across components
   const maxDensity = useMemo(() => {
@@ -251,11 +259,11 @@ export function Scene({ simulation }: SceneProps) {
       />
 
       {/* View cube for quick camera orientation */}
-      <GizmoHelper alignment="bottom-left" margin={[100, 100]}>
-        <group scale={1.2}>
+      <GizmoHelper alignment="bottom-left" margin={isMobile ? [70, 70] : [100, 100]}>
+        <group scale={isMobile ? 0.85 : 1.2}>
           <GizmoViewcube
             faces={['-Y', 'Y', 'Top', 'Bottom', 'X', '-X']}
-            font="20px system-ui, -apple-system, sans-serif"
+            font={isMobile ? "18px system-ui, -apple-system, sans-serif" : "20px system-ui, -apple-system, sans-serif"}
             color="#000"
             hoverColor="#4ade80"
             textColor="#fff"

@@ -7,12 +7,15 @@ interface MarginalHistogramsProps {
   sampleCount: number;
   distribution: Distribution;
   bins?: number;
+  scale?: number;
 }
 
-const CANVAS_WIDTH = 220;
-const CANVAS_HEIGHT = 160;
+const BASE_WIDTH = 220;
+const BASE_HEIGHT = 160;
 
-export function MarginalHistograms({ samples, sampleCount, distribution, bins = 40 }: MarginalHistogramsProps) {
+export function MarginalHistograms({ samples, sampleCount, distribution, bins = 40, scale = 1 }: MarginalHistogramsProps) {
+  const CANVAS_WIDTH = BASE_WIDTH * scale;
+  const CANVAS_HEIGHT = BASE_HEIGHT * scale;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -148,7 +151,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     ctx.fillText(`n=${samples.length}`, width - 8, 12);
     ctx.textAlign = 'left';
 
-  }, [samples, sampleCount, distribution, bins]);
+  }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT]);
 
 
   return (

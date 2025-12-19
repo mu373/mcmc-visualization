@@ -52,7 +52,7 @@ export class Visualizer {
   colorScheme: ColorScheme = 'terrain';
   histogramBins: number = 25;
   sphereSize: number = 1.0;
-  autoRotate: boolean = false;
+  autoRotate: boolean = true;
   showHeatmap: boolean = true;
   showHistogram: boolean = true;
 
