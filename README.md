@@ -1,4 +1,4 @@
-# amcmc-visualization
+# mcmc-visualization
 
 Interactive 3D visualization of Markov Chain Monte Carlo sampling algorithms.  
 https://mcmc-visualization.vercel.app/
