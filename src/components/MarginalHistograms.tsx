@@ -36,29 +36,26 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, width, height);
 
-    // Use distribution bounds for range
+    // Use distribution bounds for range (separate for X and Y)
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
-    const globalMin = Math.min(xMin, yMin);
-    const globalMax = Math.max(xMax, yMax);
-    const globalRange = globalMax - globalMin || 1;
-    const binWidth = globalRange / bins;
 
     const startX = 30;
     const chartWidth = width - 40;
-    const barWidth = chartWidth / bins;
 
-    // Helper to compute histogram with shared range
-    const computeHist = (values: number[]) => {
+    // Helper to compute histogram for a given range
+    const computeHist = (values: number[], min: number, max: number) => {
+      const range = max - min || 1;
+      const binWidth = range / bins;
       const hist = new Array(bins).fill(0);
 
       values.forEach(v => {
-        const binIndex = Math.floor((v - globalMin) / binWidth);
+        const binIndex = Math.floor((v - min) / binWidth);
         if (binIndex >= 0 && binIndex < bins) {
           hist[binIndex]++;
         }
       });
 
-      return { hist, min: globalMin, max: globalMax, maxCount: Math.max(...hist, 1) };
+      return { hist, min, max, maxCount: Math.max(...hist, 1) };
     };
 
     // Draw a single histogram panel
@@ -66,8 +63,13 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
       yOffset: number,
       label: string,
       marginalFn: (v: number) => number,
-      histData: { hist: number[]; maxCount: number } | null
+      histData: { hist: number[]; min: number; max: number; maxCount: number } | null,
+      rangeMin: number,
+      rangeMax: number
     ) => {
+      const range = rangeMax - rangeMin || 1;
+      const barWidth = chartWidth / bins;
+
       // Draw histogram bars if we have samples
       if (histData && histData.maxCount > 0) {
         histData.hist.forEach((count, i) => {
@@ -89,7 +91,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
       const numPoints = 100;
       const pdfValues: number[] = [];
       for (let i = 0; i <= numPoints; i++) {
-        const v = globalMin + (i / numPoints) * globalRange;
+        const v = rangeMin + (i / numPoints) * range;
         pdfValues.push(marginalFn(v));
       }
       const maxPdf = Math.max(...pdfValues);
@@ -121,23 +123,23 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
       // Axis labels
       ctx.fillStyle = '#aaa';
       ctx.font = '10px monospace';
-      ctx.fillText(globalMin.toFixed(1), startX, yOffset + histHeight + 10);
+      ctx.fillText(rangeMin.toFixed(1), startX, yOffset + histHeight + 10);
       ctx.textAlign = 'right';
-      ctx.fillText(globalMax.toFixed(1), width - 8, yOffset + histHeight + 10);
+      ctx.fillText(rangeMax.toFixed(1), width - 8, yOffset + histHeight + 10);
       ctx.textAlign = 'left';
     };
 
-    // Compute histograms if we have samples
+    // Compute histograms if we have samples (using separate ranges for X and Y)
     const xValues = samples.map(s => s.x);
     const yValues = samples.map(s => s.y);
-    const xData = samples.length > 0 ? computeHist(xValues) : null;
-    const yData = samples.length > 0 ? computeHist(yValues) : null;
+    const xData = samples.length > 0 ? computeHist(xValues, xMin, xMax) : null;
+    const yData = samples.length > 0 ? computeHist(yValues, yMin, yMax) : null;
 
-    // Draw X histogram (top)
-    drawPanel(5, 'X', (x) => distribution.marginalX(x), xData);
+    // Draw X histogram (top) - uses X range
+    drawPanel(5, 'X', (x) => distribution.marginalX(x), xData, xMin, xMax);
 
-    // Draw Y histogram (bottom)
-    drawPanel(histHeight + 20, 'Y', (y) => distribution.marginalY(y), yData);
+    // Draw Y histogram (bottom) - uses Y range
+    drawPanel(histHeight + 20, 'Y', (y) => distribution.marginalY(y), yData, yMin, yMax);
 
     // Sample count
     ctx.fillStyle = '#ccc';

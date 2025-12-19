@@ -7,7 +7,7 @@ export class BananaDistribution extends Distribution {
     xMin: -3,
     xMax: 3,
     yMin: -3,
-    yMax: 4
+    yMax: 10
   };
 
   a: number;
