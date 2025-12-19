@@ -6,6 +6,7 @@ import type { RandomWalkMH } from '../algorithms/RandomWalkMH';
 import type { HamiltonianMC } from '../algorithms/HamiltonianMC';
 import type { NUTS } from '../algorithms/NUTS';
 import type { GibbsSampler } from '../algorithms/GibbsSampler';
+import type { LangevinMC } from '../algorithms/LangevinMC';
 import { StandardGaussian } from '../distributions/StandardGaussian';
 import { DonutDistribution } from '../distributions/DonutDistribution';
 import { BimodalDistribution } from '../distributions/BimodalDistribution';
@@ -15,10 +16,12 @@ import { RosenbrockDistribution } from '../distributions/RosenbrockDistribution'
 import { AckleyDistribution } from '../distributions/AckleyDistribution';
 import { SquiggleDistribution } from '../distributions/SquiggleDistribution';
 import { MultimodalDistribution } from '../distributions/MultimodalDistribution';
+import { QuarticGaussian } from '../distributions/QuarticGaussian';
 
 // Distribution presets
 const DISTRIBUTIONS = {
   gaussian: () => new StandardGaussian(),
+  quartic: () => new QuarticGaussian(),
   donut: () => new DonutDistribution(2, 0.4),
   bimodal: () => new BimodalDistribution(3, 0.8),
   banana: () => new BananaDistribution(1, 1),
@@ -59,6 +62,7 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Target',
       options: {
         'Standard Gaussian': 'gaussian',
+        'Quartic Gaussian': 'quartic',
         'Donut': 'donut',
         'Bimodal': 'bimodal',
         'Banana': 'banana',
@@ -160,6 +164,9 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
           step: 5,
           label: 'Leapfrog steps',
         });
+        paramFolder.addBinding(simulation.visualizer, 'showMomentum', {
+          label: 'Show momentum',
+        });
         paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
           label: 'Show leapfrog points',
         });
@@ -177,6 +184,12 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
           step: 1,
           label: 'Max Tree Depth',
         });
+        paramFolder.addBinding(simulation.visualizer, 'showMomentum', {
+          label: 'Show momentum',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
+          label: 'Show leapfrog points',
+        });
       } else if (algorithm.name === 'Gibbs Sampler') {
         const gibbs = algorithm as GibbsSampler;
         paramFolder.addBinding(gibbs, 'gridResolution', {
@@ -184,6 +197,23 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
           max: 500,
           step: 50,
           label: 'Grid Resolution',
+        });
+      } else if (algorithm.name === 'Metropolis-adjusted Langevin') {
+        const mala = algorithm as LangevinMC;
+        paramFolder.addBinding(mala, 'epsilon', {
+          min: 0.01,
+          max: 3.0,
+          step: 0.01,
+          label: 'Step Size (ε)',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'showLangevinGradient', {
+          label: 'Show gradient',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'showLangevinDrift', {
+          label: 'Show drift',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'showLangevinNoise', {
+          label: 'Show noise',
         });
       }
 

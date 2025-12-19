@@ -46,7 +46,7 @@ export function Trajectory({ path, distribution, maxDensity, showPoints = false,
       />
       {showPoints && linePoints.map((point, i) => (
         <mesh key={i} position={point}>
-          <sphereGeometry args={[0.04, 8, 8]} />
+          <sphereGeometry args={[0.025, 8, 8]} />
           <meshBasicMaterial color={vertexColors[i]} />
         </mesh>
       ))}

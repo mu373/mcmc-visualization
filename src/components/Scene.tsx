@@ -11,6 +11,8 @@ import { SampleTrail } from './SampleTrail';
 import { SamplePoints } from './SamplePoints';
 import { Trajectory } from './Trajectory';
 import { MomentumVector } from './MomentumVector';
+import { GradientArrow } from './GradientArrow';
+import { DriftMarker } from './DriftMarker';
 import type { Simulation } from '../core/Simulation';
 
 interface SceneProps {
@@ -153,13 +155,39 @@ export function Scene({ simulation }: SceneProps) {
       />
 
       {/* HMC momentum vector - shown at trajectory start */}
-      <MomentumVector
-        position={visualizer.trajectoryPath?.[0] ?? null}
-        momentum={visualizer.momentum}
+      {visualizer.showMomentum && (
+        <MomentumVector
+          position={visualizer.trajectoryPath?.[0] ?? null}
+          momentum={visualizer.momentum}
+          distribution={distribution}
+          maxDensity={maxDensity}
+          scale={0.5}
+          show3D={visualizer.show3D}
+        />
+      )}
+
+      {/* Langevin gradient arrow - shows direction of steepest ascent */}
+      {visualizer.showLangevinGradient && (
+        <GradientArrow
+          position={visualizer.currentPosition}
+          gradient={visualizer.langevinGradient}
+          distribution={distribution}
+          maxDensity={maxDensity}
+          scale={0.3}
+          show3D={visualizer.show3D}
+        />
+      )}
+
+      {/* Langevin drift marker - shows drift point and noise radius */}
+      <DriftMarker
+        currentPosition={visualizer.currentPosition}
+        driftPoint={visualizer.langevinDriftPoint}
+        noiseRadius={visualizer.langevinNoiseRadius}
         distribution={distribution}
         maxDensity={maxDensity}
-        scale={0.5}
         show3D={visualizer.show3D}
+        showDrift={visualizer.showLangevinDrift}
+        showNoise={visualizer.showLangevinNoise}
       />
 
       {/* Proposal line - from current to proposal */}

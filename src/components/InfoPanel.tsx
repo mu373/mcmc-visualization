@@ -27,6 +27,10 @@ const algorithmDescriptions: Record<string, { title: string; description: string
     title: 'Gibbs Sampler',
     description: 'Samples each coordinate from its conditional distribution, producing axis-aligned movements.',
   },
+  'Metropolis-adjusted Langevin': {
+    title: 'MALA',
+    description: 'Combines gradient-driven drift toward local peaks with Gaussian noise. Efficient within modes but tends to get trapped in multimodal distributions.',
+  },
 };
 
 export function InfoPanel({ algorithm, samples, acceptanceRate }: InfoPanelProps) {

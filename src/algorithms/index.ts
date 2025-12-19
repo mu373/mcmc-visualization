@@ -2,9 +2,10 @@ import { RandomWalkMH } from './RandomWalkMH';
 import { HamiltonianMC } from './HamiltonianMC';
 import { NUTS } from './NUTS';
 import { GibbsSampler } from './GibbsSampler';
+import { LangevinMC } from './LangevinMC';
 import type { MCMCAlgorithm } from './MCMCAlgorithm';
 
-export type AlgorithmType = 'rwmh' | 'hmc' | 'nuts' | 'gibbs';
+export type AlgorithmType = 'rwmh' | 'hmc' | 'nuts' | 'gibbs' | 'mala';
 
 export interface AlgorithmConfig {
   key: AlgorithmType;
@@ -33,6 +34,11 @@ export const ALGORITHMS: AlgorithmConfig[] = [
     name: 'Gibbs Sampler',
     create: () => new GibbsSampler(),
   },
+  {
+    key: 'mala',
+    name: 'Langevin (MALA)',
+    create: () => new LangevinMC(),
+  },
 ];
 
 export function createAlgorithm(key: AlgorithmType): MCMCAlgorithm {
@@ -41,5 +47,5 @@ export function createAlgorithm(key: AlgorithmType): MCMCAlgorithm {
   return config.create();
 }
 
-export { RandomWalkMH, HamiltonianMC, NUTS, GibbsSampler };
+export { RandomWalkMH, HamiltonianMC, NUTS, GibbsSampler, LangevinMC };
 export type { MCMCAlgorithm } from './MCMCAlgorithm';

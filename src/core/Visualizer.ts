@@ -6,6 +6,7 @@ export type VisualizationEvent =
   | { type: 'reject'; position: Vector2 }
   | { type: 'trajectory'; path: Vector2[]; momentum?: Vector2 }
   | { type: 'gradient'; position: Vector2; direction: Vector2 }
+  | { type: 'langevin'; gradient: Vector2; driftPoint: Vector2; noiseRadius: number }
   | { type: 'particles'; points: Vector2[]; weights: number[] };
 
 export type ColorScheme = 'plasma' | 'viridis' | 'terrain' | 'hot';
@@ -22,6 +23,11 @@ export class Visualizer {
   trajectoryPath: Vector2[] | null = null;
   momentum: Vector2 | null = null;
 
+  // Langevin-specific visualization
+  langevinGradient: Vector2 | null = null;
+  langevinDriftPoint: Vector2 | null = null;
+  langevinNoiseRadius: number = 0;
+
   // Visual settings
   private _maxTrailLength: number = 500;
   terrainOpacity: number = 0.85;
@@ -32,6 +38,10 @@ export class Visualizer {
   contourLevels: number = 10;
   showSigmaRings: boolean = true;
   showLeapfrogPoints: boolean = true;
+  showMomentum: boolean = true;
+  showLangevinGradient: boolean = true;
+  showLangevinDrift: boolean = true;
+  showLangevinNoise: boolean = true;
   colorScheme: ColorScheme = 'terrain';
   histogramBins: number = 25;
   sphereSize: number = 1.0;
@@ -118,7 +128,13 @@ export class Visualizer {
         break;
 
       case 'gradient':
-        // Handle gradient visualization
+        // Handle gradient visualization (generic)
+        break;
+
+      case 'langevin':
+        this.langevinGradient = event.gradient;
+        this.langevinDriftPoint = event.driftPoint;
+        this.langevinNoiseRadius = event.noiseRadius;
         break;
 
       case 'particles':
@@ -138,5 +154,8 @@ export class Visualizer {
     this.allSamples = [];
     this.trajectoryPath = null;
     this.momentum = null;
+    this.langevinGradient = null;
+    this.langevinDriftPoint = null;
+    this.langevinNoiseRadius = 0;
   }
 }
