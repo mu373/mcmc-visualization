@@ -184,12 +184,14 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
         });
       }
 
-      // Add acceptance rate for all algorithms
-      paramFolder.addBinding(stats, 'acceptanceRate', {
-        readonly: true,
-        label: 'Accept Rate',
-        format: (v: number) => `${(v * 100).toFixed(1)}%`,
-      });
+      // Add acceptance rate (not applicable for Gibbs)
+      if (algorithm.name !== 'Gibbs Sampler') {
+        paramFolder.addBinding(stats, 'acceptanceRate', {
+          readonly: true,
+          label: 'Accept Rate',
+          format: (v: number) => `${(v * 100).toFixed(1)}%`,
+        });
+      }
     };
 
     // Algorithm selector

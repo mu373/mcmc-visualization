@@ -23,6 +23,10 @@ const algorithmDescriptions: Record<string, { title: string; description: string
     title: 'Importance Sampling',
     description: 'Draws weighted samples from a proposal distribution.',
   },
+  'Gibbs Sampler': {
+    title: 'Gibbs Sampler',
+    description: 'Samples each coordinate from its conditional distribution, producing axis-aligned movements.',
+  },
 };
 
 export function InfoPanel({ algorithm, samples, acceptanceRate }: InfoPanelProps) {
@@ -68,13 +72,15 @@ export function InfoPanel({ algorithm, samples, acceptanceRate }: InfoPanelProps
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: algName === 'Gibbs Sampler' ? '1fr' : '1fr 1fr',
         gap: 8,
         borderTop: '1px solid #222',
         paddingTop: 10,
       }}>
         <Stat label="Samples" value={samples.toString()} />
-        <Stat label="Accept" value={`${(acceptanceRate * 100).toFixed(1)}%`} />
+        {algName !== 'Gibbs Sampler' && (
+          <Stat label="Accept" value={`${(acceptanceRate * 100).toFixed(1)}%`} />
+        )}
       </div>
     </div>
   );
