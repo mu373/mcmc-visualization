@@ -71,6 +71,8 @@ canvas {
   .tp-rotv {
     width: calc(100vw - 40px) !important;
     max-width: 240px !important;
+    max-height: calc(100vh - 40px) !important;
+    overflow-y: auto !important;
   }
   .tp-rotv:not(.tp-rotv-expanded) {
     width: 56px !important;
