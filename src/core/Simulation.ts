@@ -83,6 +83,20 @@ export class Simulation {
     this.initialize();
   }
 
+  setStartPosition(position: { x: number; y: number }): void {
+    if (!this.algorithm) return;
+
+    // Reset the algorithm with the new starting position
+    this.algorithm.reset(position);
+    this.visualizer.reset();
+    this.totalSamples = 0;
+
+    // Set the new position
+    this.visualizer.currentPosition = position;
+    this.visualizer.acceptedSamples = [position];
+    this.visualizer.allSamples = [position];
+  }
+
   private animate = (): void => {
     if (!this.isRunning) return;
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
+import type { ThreeEvent } from '@react-three/fiber';
 import type { Distribution } from '../distributions/Distribution';
 import { getColor, type ColorScheme } from '../core/colormap';
 
@@ -9,6 +10,7 @@ interface TerrainProps {
   opacity?: number;
   colorScheme?: ColorScheme;
   show3D?: boolean;
+  onDoubleClick?: (pos: { x: number; y: number }) => void;
 }
 
 export function Terrain({
@@ -16,7 +18,8 @@ export function Terrain({
   resolution = 60,
   opacity = 0.85,
   colorScheme = 'plasma',
-  show3D = true
+  show3D = true,
+  onDoubleClick,
 }: TerrainProps) {
   // Calculate center offset for positioning
   const centerX = (distribution.bounds.xMin + distribution.bounds.xMax) / 2;
@@ -78,8 +81,21 @@ export function Terrain({
     return geometry;
   }, [distribution, resolution, centerX, centerY, colorScheme, show3D]);
 
+  const handleDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+    if (onDoubleClick) {
+      e.stopPropagation();
+      // World X = distribution X, World Z = distribution Y
+      onDoubleClick({ x: e.point.x, y: e.point.z });
+    }
+  };
+
   return (
-    <mesh geometry={geometry} rotation-x={-Math.PI / 2} position={[centerX, 0, centerY]}>
+    <mesh
+      geometry={geometry}
+      rotation-x={-Math.PI / 2}
+      position={[centerX, 0, centerY]}
+      onDoubleClick={handleDoubleClick}
+    >
       <meshStandardMaterial
         vertexColors
         transparent

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Text, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import { Terrain } from './Terrain';
@@ -21,6 +21,11 @@ interface SceneProps {
 
 export function Scene({ simulation }: SceneProps) {
   const { distribution, visualizer } = simulation;
+
+  // Handle position click - set new starting position
+  const handlePositionClick = useCallback((pos: { x: number; y: number }) => {
+    simulation.setStartPosition(pos);
+  }, [simulation]);
 
   // Responsive gizmo size
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -88,6 +93,7 @@ export function Scene({ simulation }: SceneProps) {
         />
       )}
 
+      
       {/* Origin marker - white dot */}
       {visualizer.showOrigin && (
         <>
@@ -139,6 +145,7 @@ export function Scene({ simulation }: SceneProps) {
         opacity={visualizer.terrainOpacity}
         colorScheme={visualizer.colorScheme}
         show3D={visualizer.show3D}
+        onDoubleClick={handlePositionClick}
       />
 
       {/* Contour lines */}
