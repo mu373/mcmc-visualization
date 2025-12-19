@@ -229,6 +229,10 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Show 3D',
     });
 
+    vizFolder.addBinding(simulation.visualizer, 'autoRotate', {
+      label: 'Auto Rotate',
+    });
+
     vizFolder.addBinding(simulation.visualizer, 'colorScheme', {
       label: 'Color Scheme',
       options: {

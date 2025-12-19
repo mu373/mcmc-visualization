@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, Text } from '@react-three/drei';
+import { OrbitControls, Grid, Text, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import { Terrain } from './Terrain';
 import { ContourLines } from './ContourLines';
 import { SigmaRing } from './SigmaRings';
@@ -196,7 +196,24 @@ export function Scene({ simulation }: SceneProps) {
         minDistance={5}
         maxDistance={30}
         enablePan={true}
+        autoRotate={visualizer.autoRotate}
+        autoRotateSpeed={2}
       />
+
+      {/* View cube for quick camera orientation */}
+      <GizmoHelper alignment="bottom-left" margin={[100, 100]}>
+        <group scale={1.2}>
+          <GizmoViewcube
+            faces={['-Y', 'Y', 'Top', 'Bottom', 'X', '-X']}
+            font="20px system-ui, -apple-system, sans-serif"
+            color="#000"
+            hoverColor="#4ade80"
+            textColor="#fff"
+            strokeColor="#fff"
+            opacity={1}
+          />
+        </group>
+      </GizmoHelper>
     </Canvas>
   );
 }
