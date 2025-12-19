@@ -44,7 +44,6 @@ export function SamplePoints({ points, distribution, maxDensity, maxPoints = 300
               roughness={0.3}
               transparent
               opacity={opacity}
-              depthWrite={false}
             />
           </mesh>
         );
