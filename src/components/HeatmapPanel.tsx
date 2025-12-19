@@ -95,8 +95,8 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
           const g = Math.floor(255 * color.g);
           const b = Math.floor(255 * color.b);
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-          // Note: j is flipped for Y axis (top = high Y)
-          ctx.fillRect(i * cellSize, (bins - 1 - j) * cellSize, cellSize, cellSize);
+          // X horizontal, Y vertical (flipped to match 3D top view)
+          ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
         }
       }
     }
@@ -149,11 +149,11 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
             const p1 = interpolateEdge(e1, i, j, contourResolution, v00, v10, v01, v11, threshold);
             const p2 = interpolateEdge(e2, i, j, contourResolution, v00, v10, v01, v11, threshold);
             if (p1 && p2) {
-              // Convert to canvas coordinates (flip Y)
+              // X horizontal, Y vertical (flipped to match 3D top view)
               const px1 = p1.x * size;
-              const py1 = (1 - p1.y) * size;
+              const py1 = p1.y * size;
               const px2 = p2.x * size;
-              const py2 = (1 - p2.y) * size;
+              const py2 = p2.y * size;
               ctx.moveTo(px1, py1);
               ctx.lineTo(px2, py2);
             }
@@ -163,7 +163,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
       ctx.stroke();
     }
 
-    // Draw axis labels
+    // Draw axis labels (X horizontal, Y vertical)
     ctx.fillStyle = '#666';
     ctx.font = '12px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';

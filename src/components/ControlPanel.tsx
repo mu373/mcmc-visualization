@@ -255,6 +255,7 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
     // Visual settings
     const vizFolder = pane.addFolder({ title: 'Visuals' });
 
+    // View options
     vizFolder.addBinding(simulation.visualizer, 'show3D', {
       label: 'Show 3D',
     });
@@ -263,21 +264,13 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Auto Rotate',
     });
 
-    vizFolder.addBinding(simulation.visualizer, 'colorScheme', {
-      label: 'Color Scheme',
-      options: {
-        'Terrain': 'terrain',
-        'Plasma': 'plasma',
-        'Viridis': 'viridis',
-        'Hot': 'hot',
-      },
+    // Scene elements
+    vizFolder.addBinding(simulation.visualizer, 'showGrid', {
+      label: 'Show Grid',
     });
 
-    vizFolder.addBinding(simulation.visualizer, 'terrainOpacity', {
-      min: 0,
-      max: 1,
-      step: 0.05,
-      label: 'Terrain Opacity',
+    vizFolder.addBinding(simulation.visualizer, 'showOrigin', {
+      label: 'Show Origin',
     });
 
     vizFolder.addBinding(simulation.visualizer, 'showContours', {
@@ -291,10 +284,24 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       label: 'Contour Levels',
     });
 
-    vizFolder.addBinding(simulation.visualizer, 'showGrid', {
-      label: 'Show Grid',
+    vizFolder.addBinding(simulation.visualizer, 'terrainOpacity', {
+      min: 0,
+      max: 1,
+      step: 0.05,
+      label: 'Terrain Opacity',
     });
 
+    vizFolder.addBinding(simulation.visualizer, 'colorScheme', {
+      label: 'Color Scheme',
+      options: {
+        'Terrain': 'terrain',
+        'Plasma': 'plasma',
+        'Viridis': 'viridis',
+        'Hot': 'hot',
+      },
+    });
+
+    // Sample visualization
     vizFolder.addBinding(simulation.visualizer, 'sphereSize', {
       min: 0.2,
       max: 3,
@@ -311,6 +318,15 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
       max: 2000,
       step: 10,
       label: 'Visible Samples',
+    });
+
+    // UI panels
+    vizFolder.addBinding(simulation.visualizer, 'showHeatmap', {
+      label: 'Show Heatmap',
+    });
+
+    vizFolder.addBinding(simulation.visualizer, 'showHistogram', {
+      label: 'Show Histogram',
     });
 
     vizFolder.addBinding(simulation.visualizer, 'histogramBins', {

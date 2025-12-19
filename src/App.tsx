@@ -61,31 +61,37 @@ function App() {
         samples={simulation.visualizer.allSamples.length}
         acceptanceRate={acceptanceRate}
       />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 40,
-          right: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          zIndex: 100,
-        }}
-      >
-        <HeatmapPanel
-          samples={simulation.visualizer.allSamples}
-          sampleCount={simulation.visualizer.allSamples.length}
-          distribution={simulation.distribution!}
-          bins={simulation.visualizer.histogramBins}
-          colorScheme={simulation.visualizer.colorScheme}
-        />
-        <MarginalHistograms
-          samples={simulation.visualizer.allSamples}
-          sampleCount={simulation.visualizer.allSamples.length}
-          distribution={simulation.distribution!}
-          bins={simulation.visualizer.histogramBins}
-        />
-      </div>
+      {(simulation.visualizer.showHeatmap || simulation.visualizer.showHistogram) && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            right: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            zIndex: 100,
+          }}
+        >
+          {simulation.visualizer.showHeatmap && (
+            <HeatmapPanel
+              samples={simulation.visualizer.allSamples}
+              sampleCount={simulation.visualizer.allSamples.length}
+              distribution={simulation.distribution!}
+              bins={simulation.visualizer.histogramBins}
+              colorScheme={simulation.visualizer.colorScheme}
+            />
+          )}
+          {simulation.visualizer.showHistogram && (
+            <MarginalHistograms
+              samples={simulation.visualizer.allSamples}
+              sampleCount={simulation.visualizer.allSamples.length}
+              distribution={simulation.distribution!}
+              bins={simulation.visualizer.histogramBins}
+            />
+          )}
+        </div>
+      )}
       <footer
         style={{
           position: 'absolute',

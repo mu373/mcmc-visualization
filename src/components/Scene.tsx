@@ -73,7 +73,29 @@ export function Scene({ simulation }: SceneProps) {
         />
       )}
 
-      {/* Axis labels */}
+      {/* Origin marker - white dot */}
+      {visualizer.showOrigin && (
+        <>
+          <points position={[0, 0.02, 0]}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, 0]), 3]} />
+            </bufferGeometry>
+            <pointsMaterial size={8} sizeAttenuation={false} color="#fff" />
+          </points>
+          <Text
+            position={[0.3, 0.05, 0.3]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            fontSize={0.3}
+            color="#888"
+            anchorX="left"
+            anchorY="middle"
+          >
+            (0,0)
+          </Text>
+        </>
+      )}
+
+      {/* Axis labels - Y on left, X at far end (matches heatmap orientation) */}
       <Text
         position={[distribution.bounds.xMin - 1, 0.05, 0]}
         rotation={[-Math.PI / 2, 0, 0]}

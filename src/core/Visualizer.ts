@@ -33,6 +33,7 @@ export class Visualizer {
   terrainOpacity: number = 0.85;
   show3D: boolean = true;
   showGrid: boolean = true;
+  showOrigin: boolean = false;
   showTrail: boolean = false;
   showContours: boolean = true;
   contourLevels: number = 10;
@@ -46,6 +47,8 @@ export class Visualizer {
   histogramBins: number = 25;
   sphereSize: number = 1.0;
   autoRotate: boolean = false;
+  showHeatmap: boolean = true;
+  showHistogram: boolean = true;
 
   get maxTrailLength(): number {
     return this._maxTrailLength;
