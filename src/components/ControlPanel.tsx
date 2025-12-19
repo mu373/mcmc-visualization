@@ -5,6 +5,7 @@ import { ALGORITHMS, createAlgorithm, type AlgorithmType } from '../algorithms';
 import type { RandomWalkMH } from '../algorithms/RandomWalkMH';
 import type { HamiltonianMC } from '../algorithms/HamiltonianMC';
 import type { NUTS } from '../algorithms/NUTS';
+import type { GibbsSampler } from '../algorithms/GibbsSampler';
 import { StandardGaussian } from '../distributions/StandardGaussian';
 import { DonutDistribution } from '../distributions/DonutDistribution';
 import { BimodalDistribution } from '../distributions/BimodalDistribution';
@@ -172,6 +173,14 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
           max: 15,
           step: 1,
           label: 'Max Tree Depth',
+        });
+      } else if (algorithm.name === 'Gibbs Sampler') {
+        const gibbs = algorithm as GibbsSampler;
+        paramFolder.addBinding(gibbs, 'gridResolution', {
+          min: 50,
+          max: 500,
+          step: 50,
+          label: 'Grid Resolution',
         });
       }
 
