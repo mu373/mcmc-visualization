@@ -32,4 +32,30 @@ export abstract class Distribution {
       y: (logDensityY1 - logDensityY2) / (2 * h)
     };
   }
+
+  // Marginal PDF for X (integrate out Y)
+  // Default: numerical integration (can be overridden for analytical forms)
+  marginalX(x: number, steps: number = 100): number {
+    const { yMin, yMax } = this.bounds;
+    const dy = (yMax - yMin) / steps;
+    let sum = 0;
+    for (let i = 0; i < steps; i++) {
+      const y = yMin + (i + 0.5) * dy;
+      sum += this.density({ x, y });
+    }
+    return sum * dy;
+  }
+
+  // Marginal PDF for Y (integrate out X)
+  // Default: numerical integration (can be overridden for analytical forms)
+  marginalY(y: number, steps: number = 100): number {
+    const { xMin, xMax } = this.bounds;
+    const dx = (xMax - xMin) / steps;
+    let sum = 0;
+    for (let i = 0; i < steps; i++) {
+      const x = xMin + (i + 0.5) * dx;
+      sum += this.density({ x, y });
+    }
+    return sum * dx;
+  }
 }

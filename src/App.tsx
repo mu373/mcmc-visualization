@@ -48,6 +48,7 @@ function App() {
       <MarginalHistograms
         samples={simulation.visualizer.allSamples}
         sampleCount={simulation.visualizer.allSamples.length}
+        distribution={simulation.distribution!}
         bins={simulation.visualizer.histogramBins}
       />
     </>

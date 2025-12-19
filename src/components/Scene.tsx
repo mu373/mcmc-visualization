@@ -73,7 +73,7 @@ export function Scene({ simulation }: SceneProps) {
 
       {/* Axis labels */}
       <Text
-        position={[6, 0.05, 0]}
+        position={[-6, 0.05, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.5}
         color="#666"
