@@ -71,8 +71,8 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
 
     simFolder.addBinding(simulation, 'delay', {
       min: 0,
-      max: 500,
-      step: 10,
+      max: 2000,
+      step: 50,
       label: 'Delay (ms)',
     });
 
@@ -169,6 +169,15 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
         });
         paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
           label: 'Show leapfrog points',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'animateTrajectory', {
+          label: 'Animate trajectory',
+        });
+        paramFolder.addBinding(simulation.visualizer, 'trajectoryAnimationSpeed', {
+          min: 10,
+          max: 500,
+          step: 10,
+          label: 'Animation speed (ms)',
         });
       } else if (algorithm.name === 'No-U-Turn Sampler') {
         const nuts = algorithm as NUTS;

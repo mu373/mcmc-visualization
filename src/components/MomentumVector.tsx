@@ -53,7 +53,7 @@ export function MomentumVector({
       />
       {/* Arrow head - rotate to lay flat then point in momentum direction */}
       <Cone
-        args={[0.08, 0.2, 8]}
+        args={[0.04, 0.1, 8]}
         position={[endX, originY, endZ]}
         rotation={[Math.PI / 2, 0, -angle]}
       >

@@ -34,6 +34,33 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Trajectory animation driver - runs independently at configurable speed
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+
+      if (simulation.visualizer.isTrajectoryAnimating()) {
+        simulation.visualizer.advanceTrajectoryAnimation();
+      }
+
+      // Always schedule next tick to check for new animations
+      timeoutId = window.setTimeout(tick, simulation.visualizer.trajectoryAnimationSpeed);
+    };
+
+    // Start the animation tick loop
+    tick();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [simulation]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -23,6 +23,12 @@ export class Visualizer {
   trajectoryPath: Vector2[] | null = null;
   momentum: Vector2 | null = null;
 
+  // Trajectory animation state
+  private fullTrajectoryPath: Vector2[] | null = null;
+  trajectoryAnimationIndex: number = 0;
+  animateTrajectory: boolean = true;
+  trajectoryAnimationSpeed: number = 50; // ms between steps
+
   // Langevin-specific visualization
   langevinGradient: Vector2 | null = null;
   langevinDriftPoint: Vector2 | null = null;
@@ -126,8 +132,18 @@ export class Visualizer {
         break;
 
       case 'trajectory':
-        this.trajectoryPath = event.path;
         this.momentum = event.momentum || null;
+        if (this.animateTrajectory && event.path.length > 1) {
+          // Start animation from the beginning
+          this.fullTrajectoryPath = event.path;
+          this.trajectoryAnimationIndex = 1; // Show at least 2 points for a line
+          this.trajectoryPath = event.path.slice(0, 2);
+        } else {
+          // Show full trajectory immediately
+          this.fullTrajectoryPath = null;
+          this.trajectoryAnimationIndex = 0;
+          this.trajectoryPath = event.path;
+        }
         break;
 
       case 'gradient':
@@ -146,6 +162,29 @@ export class Visualizer {
     }
   }
 
+  // Check if trajectory animation is in progress
+  isTrajectoryAnimating(): boolean {
+    return (
+      this.fullTrajectoryPath !== null &&
+      this.trajectoryAnimationIndex < this.fullTrajectoryPath.length - 1
+    );
+  }
+
+  // Advance trajectory animation by one step
+  advanceTrajectoryAnimation(): boolean {
+    if (!this.fullTrajectoryPath) return false;
+
+    if (this.trajectoryAnimationIndex < this.fullTrajectoryPath.length - 1) {
+      this.trajectoryAnimationIndex++;
+      this.trajectoryPath = this.fullTrajectoryPath.slice(
+        0,
+        this.trajectoryAnimationIndex + 1
+      );
+      return true;
+    }
+    return false;
+  }
+
   reset(): void {
     this.queue = [];
     this.currentPosition = null;
@@ -156,6 +195,8 @@ export class Visualizer {
     this.acceptedSamples = [];
     this.allSamples = [];
     this.trajectoryPath = null;
+    this.fullTrajectoryPath = null;
+    this.trajectoryAnimationIndex = 0;
     this.momentum = null;
     this.langevinGradient = null;
     this.langevinDriftPoint = null;
