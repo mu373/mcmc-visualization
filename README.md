@@ -35,6 +35,9 @@ pnpm install
 pnpm dev
 ```
 
+## Reference
+Inspired by ["MCMC Interactive Gallery" by Chi Feng](https://chi-feng.github.io/mcmc-demo/).
+
 ## License
 
 MIT License
