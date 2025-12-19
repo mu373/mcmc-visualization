@@ -27,7 +27,7 @@ export class Visualizer {
   private fullTrajectoryPath: Vector2[] | null = null;
   trajectoryAnimationIndex: number = 0;
   animateTrajectory: boolean = true;
-  trajectoryAnimationSpeed: number = 50; // ms between steps
+  trajectoryAnimationSpeed: number = 30; // ms between steps
 
   // Langevin-specific visualization
   langevinGradient: Vector2 | null = null;
@@ -133,13 +133,13 @@ export class Visualizer {
 
       case 'trajectory':
         this.momentum = event.momentum || null;
-        if (this.animateTrajectory && event.path.length > 1) {
+        if (this.animateTrajectory && this.trajectoryAnimationSpeed > 0 && event.path.length > 1) {
           // Start animation from the beginning
           this.fullTrajectoryPath = event.path;
           this.trajectoryAnimationIndex = 1; // Show at least 2 points for a line
           this.trajectoryPath = event.path.slice(0, 2);
         } else {
-          // Show full trajectory immediately
+          // Show full trajectory immediately (speed = 0 or animation disabled)
           this.fullTrajectoryPath = null;
           this.trajectoryAnimationIndex = 0;
           this.trajectoryPath = event.path;

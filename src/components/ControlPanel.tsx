@@ -174,8 +174,8 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
           label: 'Animate trajectory',
         });
         paramFolder.addBinding(simulation.visualizer, 'trajectoryAnimationSpeed', {
-          min: 10,
-          max: 500,
+          min: 0,
+          max: 300,
           step: 10,
           label: 'Animation speed (ms)',
         });
