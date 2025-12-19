@@ -32,6 +32,29 @@ const DISTRIBUTIONS = {
   multimodal: () => new MultimodalDistribution(),
 };
 
+// Map distribution names to keys
+const DISTRIBUTION_NAME_TO_KEY: Record<string, keyof typeof DISTRIBUTIONS> = {
+  'Standard Gaussian': 'gaussian',
+  'Quartic Gaussian': 'quartic',
+  'Donut': 'donut',
+  'Bimodal': 'bimodal',
+  'Banana': 'banana',
+  'Rastrigin': 'rastrigin',
+  'Rosenbrock': 'rosenbrock',
+  'Ackley': 'ackley',
+  'Squiggle': 'squiggle',
+  'Multimodal': 'multimodal',
+};
+
+// Map algorithm names to keys
+const ALGORITHM_NAME_TO_KEY: Record<string, AlgorithmType> = {
+  'Random Walk Metropolis-Hastings': 'rwmh',
+  'Hamiltonian Monte Carlo': 'hmc',
+  'No-U-Turn Sampler': 'nuts',
+  'Gibbs Sampler': 'gibbs',
+  'Metropolis-adjusted Langevin': 'mala',
+};
+
 interface ControlPanelProps {
   simulation: Simulation;
   onDistributionChange?: () => void;
@@ -99,7 +122,10 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
 
     // Distribution selector
     const distFolder = pane.addFolder({ title: 'Distribution' });
-    const distParams = { selected: 'gaussian' };
+    const currentDistKey = simulation.distribution
+      ? DISTRIBUTION_NAME_TO_KEY[simulation.distribution.name] || 'gaussian'
+      : 'gaussian';
+    const distParams = { selected: currentDistKey };
 
     distFolder.addBinding(distParams, 'selected', {
       label: 'Target',
@@ -131,7 +157,10 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
       algorithmOptions[a.name] = a.key;
     });
 
-    const algParams = { selected: 'rwmh' as AlgorithmType };
+    const currentAlgKey = simulation.algorithm
+      ? ALGORITHM_NAME_TO_KEY[simulation.algorithm.name] || 'rwmh'
+      : 'rwmh';
+    const algParams = { selected: currentAlgKey as AlgorithmType };
 
     // Parameter folder (will be rebuilt when algorithm changes)
     let paramFolder = pane.addFolder({ title: 'Parameters' });
