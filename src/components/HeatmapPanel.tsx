@@ -13,6 +13,36 @@ interface HeatmapPanelProps {
 
 const CANVAS_SIZE = 160;
 
+// Marching squares edge lookup table
+type Edge = 0 | 1 | 2 | 3; // 0=bottom, 1=right, 2=top, 3=left
+const marchingSquaresEdges: Record<number, [Edge, Edge][]> = {
+  0: [], 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[2, 3]], 5: [[2, 0]],
+  6: [[0, 1], [2, 3]], 7: [[2, 1]], 8: [[1, 2]], 9: [[3, 0], [1, 2]],
+  10: [[0, 2]], 11: [[3, 2]], 12: [[1, 3]], 13: [[1, 0]], 14: [[0, 3]], 15: [],
+};
+
+function interpolateEdge(
+  edge: Edge, i: number, j: number, resolution: number,
+  v00: number, v10: number, v01: number, v11: number, threshold: number
+): { x: number; y: number } | null {
+  let va: number, vb: number;
+  let ax: number, ay: number, bx: number, by: number;
+  const x0 = i / resolution, x1 = (i + 1) / resolution;
+  const y0 = j / resolution, y1 = (j + 1) / resolution;
+
+  switch (edge) {
+    case 0: va = v00; vb = v10; ax = x0; ay = y0; bx = x1; by = y0; break;
+    case 1: va = v10; vb = v11; ax = x1; ay = y0; bx = x1; by = y1; break;
+    case 2: va = v01; vb = v11; ax = x0; ay = y1; bx = x1; by = y1; break;
+    case 3: va = v00; vb = v01; ax = x0; ay = y0; bx = x0; by = y1; break;
+    default: return null;
+  }
+
+  if (Math.abs(vb - va) < 1e-10) return { x: (ax + bx) / 2, y: (ay + by) / 2 };
+  const t = (threshold - va) / (vb - va);
+  return { x: ax + t * (bx - ax), y: ay + t * (by - ay) };
+}
+
 export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, colorScheme = 'terrain' }: HeatmapPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -71,49 +101,62 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
       }
     }
 
-    // Draw contour lines from distribution
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 0.5;
+    // Draw contour lines using marching squares
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1;
 
-    const contourLevels = [0.1, 0.3, 0.5, 0.7, 0.9];
+    const contourResolution = 60;
+    const numLevels = 8;
+
+    // Sample density on grid
     let maxDensity = 0;
-
-    // Find max density
-    for (let i = 0; i <= 20; i++) {
-      for (let j = 0; j <= 20; j++) {
-        const x = xMin + (i / 20) * xRange;
-        const y = yMin + (j / 20) * yRange;
-        maxDensity = Math.max(maxDensity, distribution.density({ x, y }));
+    const grid: number[][] = [];
+    for (let i = 0; i <= contourResolution; i++) {
+      const row: number[] = [];
+      for (let j = 0; j <= contourResolution; j++) {
+        const x = xMin + (xRange * i) / contourResolution;
+        const y = yMin + (yRange * j) / contourResolution;
+        const d = distribution.density({ x, y });
+        row.push(d);
+        maxDensity = Math.max(maxDensity, d);
       }
+      grid.push(row);
     }
 
-    // Draw contours as simple level sets
-    const resolution = 50;
-    for (const level of contourLevels) {
+    // Draw contours at each level
+    for (let level = 1; level <= numLevels; level++) {
+      const threshold = (level / (numLevels + 1)) * maxDensity;
       ctx.beginPath();
-      for (let i = 0; i < resolution; i++) {
-        for (let j = 0; j < resolution; j++) {
-          const x = xMin + (i / resolution) * xRange;
-          const y = yMin + (j / resolution) * yRange;
-          const d = distribution.density({ x, y }) / maxDensity;
 
-          // Check if this cell crosses the contour level
-          const x2 = xMin + ((i + 1) / resolution) * xRange;
-          const y2 = yMin + ((j + 1) / resolution) * yRange;
-          const d2 = distribution.density({ x: x2, y }) / maxDensity;
-          const d3 = distribution.density({ x, y: y2 }) / maxDensity;
+      for (let i = 0; i < contourResolution; i++) {
+        for (let j = 0; j < contourResolution; j++) {
+          const v00 = grid[i][j];
+          const v10 = grid[i + 1][j];
+          const v01 = grid[i][j + 1];
+          const v11 = grid[i + 1][j + 1];
 
-          if ((d < level && d2 >= level) || (d >= level && d2 < level)) {
-            const px = (i / resolution) * size;
-            const py = (1 - j / resolution) * size;
-            ctx.moveTo(px, py);
-            ctx.lineTo(px + size / resolution, py);
-          }
-          if ((d < level && d3 >= level) || (d >= level && d3 < level)) {
-            const px = (i / resolution) * size;
-            const py = (1 - j / resolution) * size;
-            ctx.moveTo(px, py);
-            ctx.lineTo(px, py - size / resolution);
+          // Marching squares case
+          const caseIndex =
+            (v00 >= threshold ? 1 : 0) |
+            (v10 >= threshold ? 2 : 0) |
+            (v01 >= threshold ? 4 : 0) |
+            (v11 >= threshold ? 8 : 0);
+
+          const edges = marchingSquaresEdges[caseIndex];
+          if (!edges) continue;
+
+          for (const [e1, e2] of edges) {
+            const p1 = interpolateEdge(e1, i, j, contourResolution, v00, v10, v01, v11, threshold);
+            const p2 = interpolateEdge(e2, i, j, contourResolution, v00, v10, v01, v11, threshold);
+            if (p1 && p2) {
+              // Convert to canvas coordinates (flip Y)
+              const px1 = p1.x * size;
+              const py1 = (1 - p1.y) * size;
+              const px2 = p2.x * size;
+              const py2 = (1 - p2.y) * size;
+              ctx.moveTo(px1, py1);
+              ctx.lineTo(px2, py2);
+            }
           }
         }
       }
