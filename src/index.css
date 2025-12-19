@@ -48,3 +48,20 @@ canvas {
   --tp-monitor-background-color: hsla(0, 0%, 10%, 1);
   --tp-monitor-foreground-color: hsla(0, 0%, 100%, 1);
 }
+
+/* Tweakpane style overrides */
+.tp-rotv {
+  border: 1px solid #222 !important;
+  border-radius: 8px !important;
+  width: 280px !important;
+}
+
+.tp-rotv,
+.tp-rotv * {
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-weight: initial !important;
+}
+
+.tp-fldv_t {
+  font-weight: bold !important;
+}

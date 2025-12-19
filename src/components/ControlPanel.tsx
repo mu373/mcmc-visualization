@@ -54,31 +54,6 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
 
     paneRef.current = pane;
 
-    // Distribution selector
-    const distFolder = pane.addFolder({ title: 'Distribution' });
-    const distParams = { selected: 'gaussian' };
-
-    distFolder.addBinding(distParams, 'selected', {
-      label: 'Target',
-      options: {
-        'Standard Gaussian': 'gaussian',
-        'Quartic Gaussian': 'quartic',
-        'Donut': 'donut',
-        'Bimodal': 'bimodal',
-        'Banana': 'banana',
-        'Rastrigin': 'rastrigin',
-        'Rosenbrock': 'rosenbrock',
-        'Ackley': 'ackley',
-        'Squiggle': 'squiggle',
-        'Multimodal': 'multimodal',
-      },
-    }).on('change', (e: { value: keyof typeof DISTRIBUTIONS }) => {
-      const newDist = DISTRIBUTIONS[e.value]();
-      simulation.setDistribution(newDist);
-      simulation.reset();
-      onDistributionChange?.();
-    });
-
     // Simulation controls
     const simFolder = pane.addFolder({ title: 'Simulation' });
 
@@ -104,6 +79,31 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
     simFolder.addBinding(simulation, 'totalSamples', {
       readonly: true,
       label: 'Total Samples',
+    });
+
+    // Distribution selector
+    const distFolder = pane.addFolder({ title: 'Distribution' });
+    const distParams = { selected: 'gaussian' };
+
+    distFolder.addBinding(distParams, 'selected', {
+      label: 'Target',
+      options: {
+        'Gaussian': 'gaussian',
+        'Quartic': 'quartic',
+        'Bimodal': 'bimodal',
+        'Multimodal': 'multimodal',
+        'Banana': 'banana',
+        'Donut': 'donut',
+        'Squiggle': 'squiggle',
+        'Rosenbrock': 'rosenbrock',
+        'Rastrigin': 'rastrigin',
+        'Ackley': 'ackley',
+      },
+    }).on('change', (e: { value: keyof typeof DISTRIBUTIONS }) => {
+      const newDist = DISTRIBUTIONS[e.value]();
+      simulation.setDistribution(newDist);
+      simulation.reset();
+      onDistributionChange?.();
     });
 
     // Algorithm selector and parameters

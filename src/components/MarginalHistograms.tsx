@@ -155,7 +155,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     <div
       style={{
         position: 'absolute',
-        bottom: 20,
+        bottom: 40,
         right: 20,
         background: 'rgba(17, 17, 17, 0.95)',
         borderRadius: 8,

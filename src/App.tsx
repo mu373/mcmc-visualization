@@ -51,6 +51,25 @@ function App() {
         distribution={simulation.distribution!}
         bins={simulation.visualizer.histogramBins}
       />
+      <footer
+        style={{
+          position: 'absolute',
+          bottom: 12,
+          right: 20,
+          fontSize: 11,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          zIndex: 100,
+        }}
+      >
+        <a
+          href="https://github.com/mu373/mcmc-visualization"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#666', textDecoration: 'none' }}
+        >
+          GitHub
+        </a>
+      </footer>
     </>
   );
 }
