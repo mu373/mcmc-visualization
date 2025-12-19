@@ -116,13 +116,13 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
       }
 
       // Label
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#666';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.fillText(label, 8, yOffset + 12);
 
       // Axis labels
-      ctx.fillStyle = '#aaa';
-      ctx.font = '10px monospace';
+      ctx.fillStyle = '#666';
+      ctx.font = '10px system-ui, -apple-system, sans-serif';
       ctx.fillText(rangeMin.toFixed(1), startX, yOffset + histHeight + 10);
       ctx.textAlign = 'right';
       ctx.fillText(rangeMax.toFixed(1), width - 8, yOffset + histHeight + 10);
@@ -142,8 +142,8 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     drawPanel(histHeight + 20, 'Y', (y) => distribution.marginalY(y), yData, yMin, yMax);
 
     // Sample count
-    ctx.fillStyle = '#ccc';
-    ctx.font = '10px monospace';
+    ctx.fillStyle = '#666';
+    ctx.font = '10px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`n=${samples.length}`, width - 8, 12);
     ctx.textAlign = 'left';
@@ -154,14 +154,10 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
   return (
     <div
       style={{
-        position: 'absolute',
-        bottom: 40,
-        right: 20,
         background: 'rgba(17, 17, 17, 0.95)',
         borderRadius: 8,
         padding: 8,
         border: '1px solid #222',
-        zIndex: 100,
       }}
     >
       <canvas

@@ -1,76 +1,7 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
-import type { ColorScheme } from '../core/Visualizer';
-
-// Plasma colormap - visually appealing scientific color scheme
-function plasmaColormap(t: number): THREE.Color {
-  // Clamp t to [0, 1]
-  t = Math.max(0, Math.min(1, t));
-
-  // Plasma colormap approximation (dark purple -> magenta -> orange -> yellow)
-  const r = Math.min(1, 0.05 + 1.5 * t - 0.5 * t * t);
-  const g = Math.min(1, Math.max(0, -0.2 + 1.8 * t * t));
-  const b = Math.min(1, Math.max(0, 0.53 + 0.47 * Math.cos(Math.PI * (t - 0.5))));
-
-  return new THREE.Color(r, g, b);
-}
-
-// Alternative: Viridis-style colormap
-function viridisColormap(t: number): THREE.Color {
-  t = Math.max(0, Math.min(1, t));
-
-  // Viridis approximation (dark purple -> teal -> yellow-green)
-  const r = Math.max(0, Math.min(1, 0.27 + 0.73 * t * t));
-  const g = Math.max(0, Math.min(1, 0.004 + 0.87 * t - 0.3 * t * t));
-  const b = Math.max(0, Math.min(1, 0.33 + 0.22 * t - 0.55 * t * t));
-
-  return new THREE.Color(r, g, b);
-}
-
-// Terrain colormap - natural gradient
-function terrainColormap(t: number): THREE.Color {
-  t = Math.max(0, Math.min(1, t));
-
-  // Deep blue -> cyan -> green -> yellow -> orange -> red
-  if (t < 0.25) {
-    const s = t / 0.25;
-    return new THREE.Color(0.1, 0.1 + 0.4 * s, 0.4 + 0.3 * s);
-  } else if (t < 0.5) {
-    const s = (t - 0.25) / 0.25;
-    return new THREE.Color(0.1 + 0.2 * s, 0.5 + 0.3 * s, 0.7 - 0.4 * s);
-  } else if (t < 0.75) {
-    const s = (t - 0.5) / 0.25;
-    return new THREE.Color(0.3 + 0.5 * s, 0.8 + 0.1 * s, 0.3 - 0.2 * s);
-  } else {
-    const s = (t - 0.75) / 0.25;
-    return new THREE.Color(0.8 + 0.2 * s, 0.9 - 0.3 * s, 0.1);
-  }
-}
-
-// Hot colormap - for probability density emphasis
-function hotColormap(t: number): THREE.Color {
-  t = Math.max(0, Math.min(1, t));
-
-  // Black -> red -> orange -> yellow -> white
-  if (t < 0.33) {
-    const s = t / 0.33;
-    return new THREE.Color(s, 0, 0);
-  } else if (t < 0.67) {
-    const s = (t - 0.33) / 0.34;
-    return new THREE.Color(1, s, 0);
-  } else {
-    const s = (t - 0.67) / 0.33;
-    return new THREE.Color(1, 1, s);
-  }
-}
-
-const COLORMAPS: Record<ColorScheme, (t: number) => THREE.Color> = {
-  plasma: plasmaColormap,
-  viridis: viridisColormap,
-  terrain: terrainColormap,
-  hot: hotColormap,
-};
+import { getColor, type ColorScheme } from '../core/colormap';
 
 interface TerrainProps {
   distribution: Distribution;
@@ -90,8 +21,6 @@ export function Terrain({
   // Calculate center offset for positioning
   const centerX = (distribution.bounds.xMin + distribution.bounds.xMax) / 2;
   const centerY = (distribution.bounds.yMin + distribution.bounds.yMax) / 2;
-
-  const colormap = COLORMAPS[colorScheme];
 
   const geometry = useMemo(() => {
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
@@ -139,7 +68,7 @@ export function Terrain({
       positions.setZ(i, z);
 
       // Apply colormap
-      const color = colormap(normalizedDensity);
+      const color = getColor(normalizedDensity, colorScheme);
       colors.push(color.r, color.g, color.b);
     }
 
@@ -147,7 +76,7 @@ export function Terrain({
     geometry.computeVertexNormals();
 
     return geometry;
-  }, [distribution, resolution, centerX, centerY, colormap, show3D]);
+  }, [distribution, resolution, centerX, centerY, colorScheme, show3D]);
 
   return (
     <mesh geometry={geometry} rotation-x={-Math.PI / 2} position={[centerX, 0, centerY]}>

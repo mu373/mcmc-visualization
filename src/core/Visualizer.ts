@@ -1,4 +1,6 @@
 import type { Vector2 } from './utils';
+import type { ColorScheme } from './colormap';
+export type { ColorScheme } from './colormap';
 
 export type VisualizationEvent =
   | { type: 'proposal'; from: Vector2; to: Vector2; radius?: number }
@@ -8,8 +10,6 @@ export type VisualizationEvent =
   | { type: 'gradient'; position: Vector2; direction: Vector2 }
   | { type: 'langevin'; gradient: Vector2; driftPoint: Vector2; noiseRadius: number }
   | { type: 'particles'; points: Vector2[]; weights: number[] };
-
-export type ColorScheme = 'plasma' | 'viridis' | 'terrain' | 'hot';
 
 export class Visualizer {
   queue: VisualizationEvent[] = [];

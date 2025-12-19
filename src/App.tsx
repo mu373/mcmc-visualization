@@ -3,6 +3,7 @@ import { Scene } from './components/Scene';
 import { ControlPanel } from './components/ControlPanel';
 import { InfoPanel } from './components/InfoPanel';
 import { MarginalHistograms } from './components/MarginalHistograms';
+import { HeatmapPanel } from './components/HeatmapPanel';
 import { Simulation } from './core/Simulation';
 import { StandardGaussian } from './distributions/StandardGaussian';
 import { createAlgorithm } from './algorithms';
@@ -33,6 +34,21 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        simulation.toggle();
+      } else if (e.code === 'KeyN') {
+        simulation.step();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [simulation]);
+
   // Get acceptance rate from algorithm
   const acceptanceRate = simulation.algorithm?.getAcceptanceRate?.() || 0;
 
@@ -45,12 +61,31 @@ function App() {
         samples={simulation.visualizer.allSamples.length}
         acceptanceRate={acceptanceRate}
       />
-      <MarginalHistograms
-        samples={simulation.visualizer.allSamples}
-        sampleCount={simulation.visualizer.allSamples.length}
-        distribution={simulation.distribution!}
-        bins={simulation.visualizer.histogramBins}
-      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          right: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          zIndex: 100,
+        }}
+      >
+        <HeatmapPanel
+          samples={simulation.visualizer.allSamples}
+          sampleCount={simulation.visualizer.allSamples.length}
+          distribution={simulation.distribution!}
+          bins={simulation.visualizer.histogramBins}
+          colorScheme={simulation.visualizer.colorScheme}
+        />
+        <MarginalHistograms
+          samples={simulation.visualizer.allSamples}
+          sampleCount={simulation.visualizer.allSamples.length}
+          distribution={simulation.distribution!}
+          bins={simulation.visualizer.histogramBins}
+        />
+      </div>
       <footer
         style={{
           position: 'absolute',
