@@ -14,6 +14,7 @@ import { RastriginDistribution } from '../distributions/RastriginDistribution';
 import { RosenbrockDistribution } from '../distributions/RosenbrockDistribution';
 import { AckleyDistribution } from '../distributions/AckleyDistribution';
 import { SquiggleDistribution } from '../distributions/SquiggleDistribution';
+import { MultimodalDistribution } from '../distributions/MultimodalDistribution';
 
 // Distribution presets
 const DISTRIBUTIONS = {
@@ -25,6 +26,7 @@ const DISTRIBUTIONS = {
   rosenbrock: () => new RosenbrockDistribution(1, 100, 0.02),
   ackley: () => new AckleyDistribution(20, 0.2, 2 * Math.PI, 0.3),
   squiggle: () => new SquiggleDistribution(5),
+  multimodal: () => new MultimodalDistribution(),
 };
 
 interface ControlPanelProps {
@@ -64,6 +66,7 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
         'Rosenbrock': 'rosenbrock',
         'Ackley': 'ackley',
         'Squiggle': 'squiggle',
+        'Multimodal': 'multimodal',
       },
     }).on('change', (e: { value: keyof typeof DISTRIBUTIONS }) => {
       const newDist = DISTRIBUTIONS[e.value]();
