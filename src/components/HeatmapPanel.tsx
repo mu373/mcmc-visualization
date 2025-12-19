@@ -85,8 +85,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     ctx.scale(dpr, dpr);
 
     // Clear canvas
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     // Create 2D histogram
     const hist = new Array(bins).fill(null).map(() => new Array(bins).fill(0));
@@ -193,16 +192,7 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
     ctx.fillText('Y', 4, canvasHeight / 2);
     ctx.textBaseline = 'alphabetic';
 
-    // Show burn-in indicator
-    if (isInBurnIn && burnIn > 0) {
-      ctx.fillStyle = '#f97316';
-      ctx.font = '10px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(`Burn-in (${samples.length}/${burnIn})`, canvasWidth - 4, 12);
-      ctx.textAlign = 'left';
-    }
-
-  }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange, scale, maxCanvasSize, effectiveSamples, isInBurnIn, burnIn]);
+    }, [samples, sampleCount, distribution, bins, colorScheme, canvasWidth, canvasHeight, xMin, xMax, yMin, yMax, xRange, yRange, scale, maxCanvasSize, effectiveSamples]);
 
   const containerWidth = 220 * scale + 16; // Match histogram width + padding
 
@@ -218,8 +208,28 @@ export function HeatmapPanel({ samples, sampleCount, distribution, bins = 40, co
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          textAlign: 'right',
+          fontSize: 10,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        {isInBurnIn && burnIn > 0 && (
+          <div style={{ color: '#f97316' }}>
+            Burn-in ({samples.length}/{burnIn})
+          </div>
+        )}
+        <div style={{ color: '#666' }}>
+          n={effectiveSamples.length}
+        </div>
+      </div>
       <canvas
         ref={canvasRef}
         style={{

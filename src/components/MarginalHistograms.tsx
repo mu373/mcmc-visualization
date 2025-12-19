@@ -43,8 +43,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     const histHeight = (height - 30) / 2;
 
     // Clear canvas
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, width, height);
+    ctx.clearRect(0, 0, width, height);
 
     // Use distribution bounds for range (separate for X and Y)
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
@@ -151,19 +150,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     // Draw Y histogram (bottom) - uses Y range
     drawPanel(histHeight + 20, 'Y', (y) => distribution.marginalY(y), yData, yMin, yMax);
 
-    // Sample count
-    ctx.fillStyle = '#666';
-    ctx.font = '10px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`n=${effectiveSamples.length}`, width - 8, 12);
-    // Show burn-in indicator
-    if (isInBurnIn && burnIn > 0) {
-      ctx.fillStyle = '#f97316';
-      ctx.fillText(`Burn-in (${samples.length}/${burnIn})`, width - 8, 24);
-    }
-    ctx.textAlign = 'left';
-
-  }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT, effectiveSamples, isInBurnIn, burnIn]);
+    }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT, effectiveSamples]);
 
 
   return (
@@ -173,8 +160,28 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
         borderRadius: 8,
         padding: 8,
         border: '1px solid #222',
+        position: 'relative',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          textAlign: 'right',
+          fontSize: 10,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        {isInBurnIn && burnIn > 0 && (
+          <div style={{ color: '#f97316' }}>
+            Burn-in ({samples.length}/{burnIn})
+          </div>
+        )}
+        <div style={{ color: '#666' }}>
+          n={effectiveSamples.length}
+        </div>
+      </div>
       <canvas
         ref={canvasRef}
         style={{
