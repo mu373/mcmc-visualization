@@ -152,9 +152,9 @@ export function Scene({ simulation }: SceneProps) {
         show3D={visualizer.show3D}
       />
 
-      {/* HMC momentum vector */}
+      {/* HMC momentum vector - shown at trajectory start */}
       <MomentumVector
-        position={visualizer.trajectoryPath?.[0] || null}
+        position={visualizer.trajectoryPath?.[0] ?? null}
         momentum={visualizer.momentum}
         distribution={distribution}
         maxDensity={maxDensity}
@@ -177,14 +177,15 @@ export function Scene({ simulation }: SceneProps) {
         distribution={distribution}
         maxDensity={maxDensity}
         show3D={visualizer.show3D}
+        accepted={visualizer.proposalAccepted}
       />
 
-      {/* Walker - current position */}
+      {/* Walker - current position (always green) */}
       <Walker
         position={visualizer.currentPosition}
         distribution={distribution}
         maxDensity={maxDensity}
-        color={visualizer.flashAccept ? '#22c55e' : visualizer.flashReject ? '#ef4444' : '#4ade80'}
+        color="#4ade80"
         sphereSize={visualizer.sphereSize}
         show3D={visualizer.show3D}
       />

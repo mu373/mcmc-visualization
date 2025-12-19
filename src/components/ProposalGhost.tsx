@@ -10,14 +10,15 @@ interface ProposalGhostProps {
   maxDensity: number;
   visible?: boolean;
   show3D?: boolean;
+  accepted?: boolean | null;  // null = pending, true = accepted, false = rejected
 }
 
-export function ProposalGhost({ position, distribution, maxDensity, visible = true, show3D = true }: ProposalGhostProps) {
+export function ProposalGhost({ position, distribution, maxDensity, visible = true, show3D = true, accepted = null }: ProposalGhostProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Animate pulse effect
+  // Animate pulse effect (only when pending)
   useFrame((state) => {
-    if (meshRef.current && position) {
+    if (meshRef.current && position && accepted === null) {
       const scale = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.1;
       meshRef.current.scale.setScalar(scale);
     }
@@ -28,15 +29,18 @@ export function ProposalGhost({ position, distribution, maxDensity, visible = tr
   const normalizedDensity = distribution.density(position) / maxDensity;
   const z = calcZ(normalizedDensity, show3D) + 0.02;
 
+  // Color based on accept/reject state
+  const color = accepted === true ? '#22c55e' : accepted === false ? '#ef4444' : '#fbbf24';
+
   return (
     <mesh ref={meshRef} position={[position.x, z, position.y]}>
-      <sphereGeometry args={[0.12, 16, 16]} />
+      <sphereGeometry args={[0.08, 16, 16]} />
       <meshStandardMaterial
-        color="#fbbf24"
-        emissive="#fbbf24"
-        emissiveIntensity={0.3}
+        color={color}
+        emissive={color}
+        emissiveIntensity={0.4}
         transparent
-        opacity={0.6}
+        opacity={0.85}
       />
     </mesh>
   );

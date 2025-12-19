@@ -51,38 +51,62 @@ export class Visualizer {
   // Flash effect states
   flashAccept: boolean = false;
   flashReject: boolean = false;
+  proposalAccepted: boolean | null = null;  // null = pending, true = accepted, false = rejected
+
+  // Pending updates (applied on next step)
+  private pendingPosition: Vector2 | null = null;
+  private pendingSample: Vector2 | null = null;
 
   dequeue(): void {
     const event = this.queue.shift();
     if (!event) return;
+    this.processEvent(event);
+  }
 
+  dequeueAll(): void {
+    // Apply pending updates from previous step first
+    if (this.pendingPosition) {
+      this.currentPosition = this.pendingPosition;
+      this.pendingPosition = null;
+    }
+    if (this.pendingSample) {
+      this.acceptedSamples.push(this.pendingSample);
+      if (this.acceptedSamples.length > this._maxTrailLength) {
+        this.acceptedSamples.shift();
+      }
+      this.pendingSample = null;
+    }
+
+    while (this.queue.length > 0) {
+      const event = this.queue.shift();
+      if (event) this.processEvent(event);
+    }
+  }
+
+  private processEvent(event: VisualizationEvent): void {
     switch (event.type) {
       case 'proposal':
         this.proposalPosition = event.to;
         this.proposalRadius = event.radius || 0;
+        // Reset accept/reject state for new proposal
+        this.proposalAccepted = null;
         break;
 
       case 'accept':
-        this.currentPosition = event.position;
+        // Store position and sample as pending - will be applied on next step
+        this.pendingPosition = event.position;
+        this.pendingSample = event.position;
         this.allSamples.push(event.position);
-        this.acceptedSamples.push(event.position);
 
-        // Limit visual trail length
-        if (this.acceptedSamples.length > this._maxTrailLength) {
-          this.acceptedSamples.shift();
-        }
-
-        this.proposalPosition = null;
-        this.trajectoryPath = null;  // Clear trajectory after decision
-        this.momentum = null;
+        // Mark proposal as accepted
+        this.proposalAccepted = true;
         this.flashAccept = true;
         setTimeout(() => (this.flashAccept = false), 200);
         break;
 
       case 'reject':
-        this.proposalPosition = null;
-        this.trajectoryPath = null;  // Clear trajectory after decision
-        this.momentum = null;
+        // Mark proposal as rejected
+        this.proposalAccepted = false;
         this.flashReject = true;
         setTimeout(() => (this.flashReject = false), 200);
         break;
@@ -106,6 +130,9 @@ export class Visualizer {
     this.queue = [];
     this.currentPosition = null;
     this.proposalPosition = null;
+    this.pendingPosition = null;
+    this.pendingSample = null;
+    this.proposalAccepted = null;
     this.acceptedSamples = [];
     this.allSamples = [];
     this.trajectoryPath = null;

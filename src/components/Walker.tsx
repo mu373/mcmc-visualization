@@ -18,7 +18,7 @@ export function Walker({ position, distribution, maxDensity, color = '#4ade80', 
 
   return (
     <mesh position={[position.x, z, position.y]}>
-      <sphereGeometry args={[0.15 * sphereSize, 16, 16]} />
+      <sphereGeometry args={[0.1 * sphereSize, 16, 16]} />
       <meshStandardMaterial
         color={color}
         emissive={color}

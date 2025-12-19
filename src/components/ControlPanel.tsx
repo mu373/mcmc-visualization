@@ -9,6 +9,10 @@ import { StandardGaussian } from '../distributions/StandardGaussian';
 import { DonutDistribution } from '../distributions/DonutDistribution';
 import { BimodalDistribution } from '../distributions/BimodalDistribution';
 import { BananaDistribution } from '../distributions/BananaDistribution';
+import { RastriginDistribution } from '../distributions/RastriginDistribution';
+import { RosenbrockDistribution } from '../distributions/RosenbrockDistribution';
+import { AckleyDistribution } from '../distributions/AckleyDistribution';
+import { SquiggleDistribution } from '../distributions/SquiggleDistribution';
 
 // Distribution presets
 const DISTRIBUTIONS = {
@@ -16,6 +20,10 @@ const DISTRIBUTIONS = {
   donut: () => new DonutDistribution(2, 0.4),
   bimodal: () => new BimodalDistribution(3, 0.8),
   banana: () => new BananaDistribution(1, 1),
+  rastrigin: () => new RastriginDistribution(10, 0.1),
+  rosenbrock: () => new RosenbrockDistribution(1, 100, 0.02),
+  ackley: () => new AckleyDistribution(20, 0.2, 2 * Math.PI, 0.3),
+  squiggle: () => new SquiggleDistribution(5),
 };
 
 interface ControlPanelProps {
@@ -51,6 +59,10 @@ export function ControlPanel({ simulation, onDistributionChange }: ControlPanelP
         'Donut': 'donut',
         'Bimodal': 'bimodal',
         'Banana': 'banana',
+        'Rastrigin': 'rastrigin',
+        'Rosenbrock': 'rosenbrock',
+        'Ackley': 'ackley',
+        'Squiggle': 'squiggle',
       },
     }).on('change', (e: { value: keyof typeof DISTRIBUTIONS }) => {
       const newDist = DISTRIBUTIONS[e.value]();

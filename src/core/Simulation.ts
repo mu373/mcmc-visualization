@@ -51,10 +51,8 @@ export class Simulation {
   step(): void {
     if (!this.algorithm) return;
     this.algorithm.step(this.visualizer);
-    // Dequeue all events from this step (proposal + accept/reject)
-    while (this.visualizer.queue.length > 0) {
-      this.visualizer.dequeue();
-    }
+    // Dequeue all events from this step
+    this.visualizer.dequeueAll();
     this.totalSamples++;
   }
 
