@@ -59,6 +59,36 @@ describe('chain recording', () => {
     expect(sim.acceptCount).toBe(0);
   });
 
+  it('uses target-specific MALA defaults in either selection order and preserves user tuning', () => {
+    const sim = new Simulation('gaussian', 'mala', 3);
+    expect(sim.algorithm.params().epsilon).toBe(0.3);
+    sim.setDistribution('quartic');
+    expect(sim.rowParams[0].epsilon).toBe(0.01);
+    Object.assign(sim.algorithm, { epsilon: sim.algorithm.params().epsilon });
+    sim.setDistribution('gaussian');
+    expect(sim.rowParams[0].epsilon).toBe(0.3);
+    sim.setAlgorithm('rwmh');
+    sim.setDistribution('rosenbrock');
+    sim.setAlgorithm('mala');
+    expect(sim.rowParams[0].epsilon).toBe(0.01);
+    Object.assign(sim.algorithm, { epsilon: 0.02 });
+    sim.reset();
+    sim.setDistribution('gaussian');
+    expect(sim.rowParams[0].epsilon).toBe(0.02);
+  });
+
+  it.each(['zero delay', 'disabled'])('shows the complete pending path with %s', mode => {
+    const sim = new Simulation('gaussian', 'hmc', 3);
+    sim.step();
+    const v = sim.visualizer;
+    expect(v.isTrajectoryAnimating()).toBe(true);
+    if (mode === 'zero delay') v.trajectoryAnimationSpeed = 0;
+    else v.animateTrajectory = false;
+    expect(v.advanceTrajectoryAnimation()).toBe(true);
+    expect(v.trajectoryPath).toHaveLength(21);
+    expect(v.advanceTrajectoryAnimation()).toBe(false);
+  });
+
   it('records a parameter change from the next iteration', () => {
     const sim = new Simulation('gaussian', 'rwmh', 3);
     run(sim, 5);

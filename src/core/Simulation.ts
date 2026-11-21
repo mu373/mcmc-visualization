@@ -1,4 +1,5 @@
 import { createAlgorithm, type AlgorithmType, type MCMCAlgorithm } from '../algorithms';
+import { LangevinMC } from '../algorithms/LangevinMC';
 import type { Params, StepFlag } from '../algorithms/MCMCAlgorithm';
 import { DISTRIBUTIONS, type DistributionKey } from '../distributions/presets';
 import type { Distribution } from '../distributions/Distribution';
@@ -92,6 +93,11 @@ export class Simulation {
     this.seed = seed >>> 0;
     this.rng = mulberry32(this.seed);
     this.chain = [this.start];
+    if (this.algorithm instanceof LangevinMC) {
+      // Near these presets' edges the default drift would jump across the entire box.
+      const steep = this.distributionKey === 'quartic' || this.distributionKey === 'rosenbrock';
+      this.algorithm.defaultEpsilon = steep ? 0.01 : 0.3;
+    }
     this.rowParams = [this.algorithm.params()];
     this.acceptCount = 0;
     this.flagCounts = { divergent: 0, wall: 0 };

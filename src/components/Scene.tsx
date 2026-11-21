@@ -55,7 +55,9 @@ export function Scene({ simulation }: SceneProps) {
   // While still in burn-in, show everything; afterwards hide the burn-in rows.
   const { chain } = simulation;
   const from = visualizer.excludeBurnIn && chain.length > visualizer.burnIn ? visualizer.burnIn : 0;
-  const visibleSamples = chain.slice(Math.max(from, chain.length - visualizer.maxTrailLength));
+  const end = chain.length;
+  const first = Math.max(from, end - visualizer.maxTrailLength);
+  const visibleSamples = useMemo(() => chain.slice(first, end), [chain, first, end]);
   const shown = (p: Vector2 | null) => (p && inView(p, distribution.bounds) ? p : null);
   const path = visualizer.trajectoryPath;
   const firstOut = path ? path.findIndex(p => !inView(p, distribution.bounds)) : -1;

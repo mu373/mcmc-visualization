@@ -91,6 +91,12 @@ export class Visualizer {
 
   advanceTrajectoryAnimation(): boolean {
     if (!this.fullTrajectoryPath || !this.isTrajectoryAnimating()) return false;
+    if (!this.animateTrajectory || this.trajectoryAnimationSpeed === 0) {
+      this.trajectoryAnimationIndex = this.fullTrajectoryPath.length - 1;
+      this.trajectoryPath = this.fullTrajectoryPath;
+      this.fullTrajectoryPath = null;
+      return true;
+    }
     this.trajectoryAnimationIndex++;
     this.trajectoryPath = this.fullTrajectoryPath.slice(0, this.trajectoryAnimationIndex + 1);
     return true;

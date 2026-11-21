@@ -9,7 +9,17 @@ export class LangevinMC implements MCMCAlgorithm {
   readonly description = 'Combines gradient-driven drift toward local peaks with Gaussian noise. Efficient within modes but tends to get trapped in multimodal distributions';
   readonly rateLabel = 'Accept';
 
-  epsilon = 0.3;
+  defaultEpsilon = 0.3;
+  private tunedEpsilon?: number;
+
+  get epsilon(): number {
+    return this.tunedEpsilon ?? this.defaultEpsilon;
+  }
+
+  set epsilon(value: number) {
+    // Tweakpane writes the current value back when refreshing a binding.
+    if (value !== this.epsilon) this.tunedEpsilon = value;
+  }
 
   params() {
     return { epsilon: this.epsilon };

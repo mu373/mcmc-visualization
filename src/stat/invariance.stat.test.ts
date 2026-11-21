@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { ALGORITHM_KEYS, createAlgorithm, type AlgorithmType } from '../algorithms';
+import { describe, expect, it, vi } from 'vitest';
+import { ALGORITHM_KEYS, type AlgorithmType } from '../algorithms';
 import { DISTRIBUTIONS, type DistributionKey } from '../distributions/presets';
 import { mulberry32, randn, type Rng } from '../core/rng';
+import { RandomWalkMH } from '../algorithms/RandomWalkMH';
+import { Simulation } from '../core/Simulation';
 import type { Vector2 } from '../core/utils';
 
 // One-step invariance: start from an exact independent draw of the truncated target,
@@ -72,7 +74,7 @@ const REFERENCES: Record<DistributionKey, Reference> = {
 
 function oneStepZ(dist: DistributionKey, key: AlgorithmType, seed: number, settings: object = {}) {
   const target = DISTRIBUTIONS[dist].create();
-  const alg = Object.assign(createAlgorithm(key), settings);
+  const alg = Object.assign(new Simulation(dist, key, seed).algorithm, settings);
   const { draw, statistic } = REFERENCES[dist];
   const rng = mulberry32(seed);
   let sum = 0;
@@ -81,14 +83,31 @@ function oneStepZ(dist: DistributionKey, key: AlgorithmType, seed: number, setti
     let start = draw(rng);
     while (!target.contains(start)) start = draw(rng);
     const end = alg.step(start, target, rng).next;
+    if (!target.contains(end)) {
+      throw new Error(`${key}/${dist}, seed ${seed}, trial ${i}: invalid state (${end.x}, ${end.y})`);
+    }
     const d = statistic(end) - statistic(start);
     sum += d;
     sumSq += d * d;
   }
   const mean = sum / TRIALS;
   const se = Math.sqrt(Math.max(0, (sumSq / TRIALS - mean * mean) / (TRIALS - 1)));
-  return { mean, se, z: se > 0 ? mean / se : 0 };
+  if (!Number.isFinite(mean) || !Number.isFinite(se) || se <= 0) {
+    throw new Error(`${key}/${dist}, seed ${seed}: invalid mean ${mean} or standard error ${se}`);
+  }
+  return { mean, se, z: mean / se };
 }
+
+it('rejects invalid coordinates even when the statistic maps them to a finite value', () => {
+  const step = vi.spyOn(RandomWalkMH.prototype, 'step').mockReturnValueOnce({
+    next: { x: NaN, y: 0 }, accepted: true, events: [],
+  });
+  try {
+    expect(() => oneStepZ('bimodal', 'rwmh', 1)).toThrow(/invalid state/);
+  } finally {
+    step.mockRestore();
+  }
+});
 
 describe('one-step invariance on the truncated targets', () => {
   const dists = Object.keys(REFERENCES) as DistributionKey[];
@@ -109,13 +128,27 @@ describe('one-step invariance on the truncated targets', () => {
   }
 });
 
-describe('long chains', () => {
-  // E[r²] under exp(-r⁴) in 2D is 1/√π; the box ±2.5 cuts off mass below e^-39.
-  const expected = 1 / Math.sqrt(Math.PI);
+function narrowComponentMass({ x, y }: Vector2): number {
+  const first = Math.exp(-((x + 1.5) ** 2 + (y + 1.5) ** 2) / 1.6);
+  const second = Math.exp(-((x - 1.5) ** 2 + (y - 1.5) ** 2) / 1.6);
+  const narrow = Math.exp(-((x + 2) ** 2 + (y - 2) ** 2));
+  return narrow / (first + second + narrow);
+}
+
+const longChains = [
+  // The omitted Quartic mass outside ±2.5 is below exp(-39).
+  { dist: 'quartic', statistic: r2, expected: 1 / Math.sqrt(Math.PI) },
+  // Integrate E[(Y-X²)² | x] for N(x², 0.25) restricted to [-2,8],
+  // weighted by its box probability and the N(1,25) x density on [-3,3].
+  { dist: 'rosenbrock', statistic: (p: Vector2) => (p.y - p.x ** 2) ** 2, expected: 0.24934764 },
+  // Component masses are proportional to variance × Gaussian box probability on [-6,6]².
+  { dist: 'multimodal', statistic: narrowComponentMass, expected: 0.238095324 },
+] as const;
+
+describe.each(longChains)('long chains on $dist', ({ dist, statistic, expected }) => {
   for (const key of ALGORITHM_KEYS) {
-    it(`${key} recovers the Quartic mean squared radius`, () => {
-      const target = DISTRIBUTIONS.quartic.create();
-      const alg = createAlgorithm(key);
+    it(`${key} recovers the truncated reference mean`, () => {
+      const { algorithm: alg, distribution: target } = new Simulation(dist, key, 2024);
       const rng = mulberry32(2024);
       const batches = 100;
       const perBatch = 1000;
@@ -124,7 +157,11 @@ describe('long chains', () => {
       const means: number[] = [];
       for (let b = 0; b < batches; b++) {
         let s = 0;
-        for (let i = 0; i < perBatch; i++) s += r2((q = alg.step(q, target, rng).next));
+        for (let i = 0; i < perBatch; i++) {
+          q = alg.step(q, target, rng).next;
+          if (!target.contains(q)) throw new Error(`invalid state at batch ${b}, step ${i}`);
+          s += statistic(q);
+        }
         means.push(s / perBatch);
       }
       // Batch means absorb the chain's autocorrelation into the standard error.

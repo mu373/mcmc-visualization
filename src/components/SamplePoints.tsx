@@ -38,7 +38,7 @@ export function SamplePoints({ points, capacity, distribution, maxDensity, spher
     mesh.count = n;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.instanceColor.needsUpdate = true;
-  });
+  }, [points, capacity, distribution, maxDensity, sphereSize, show3D]);
 
   return (
     <instancedMesh key={capacity} ref={ref} args={[undefined, undefined, capacity]} frustumCulled={false}>

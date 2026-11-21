@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createAlgorithm, ALGORITHM_KEYS } from './index';
 import { NUTS, sliceLeaf } from './NUTS';
+import { Simulation } from '../core/Simulation';
 import { HamiltonianMC } from './HamiltonianMC';
 import { GibbsSampler } from './GibbsSampler';
 import { mulberry32, type Rng } from '../core/rng';
@@ -131,8 +132,13 @@ describe('HMC divergence', () => {
 describe('Gibbs', () => {
   it('updates x given y, then y given the new x', () => {
     const gibbs = new GibbsSampler();
-    const current = { x: 0.5, y: -0.25 };
-    const r = gibbs.step(current, new StandardGaussian(), mulberry32(3));
+    const current = { x: 0, y: 4 };
+    const target = DISTRIBUTIONS.banana.create();
+    // Y | X=x is N(x², 1) on [-3, 10]. Its median here is within one bin of x².
+    const r = gibbs.step(current, target, scripted([0.85, 0.5, 0.5, 0.5]));
+    expect(r.next.x).toBeGreaterThan(1.5);
+    expect(r.next.x).toBeLessThan(2.5);
+    expect(Math.abs(r.next.y - r.next.x ** 2)).toBeLessThan(13 / gibbs.gridResolution);
     const traj = r.events.find(e => e.type === 'trajectory');
     expect(traj?.type === 'trajectory' && traj.path).toEqual([current, { x: r.next.x, y: current.y }, r.next]);
   });
@@ -144,8 +150,7 @@ describe('support boundary', () => {
       it(`${key} moves from just inside the edge of ${dist}`, () => {
         const target = DISTRIBUTIONS[dist].create();
         const b = target.bounds;
-        // Quartic and Rosenbrock are steep at their edges; MALA's default drift overshoots the box there.
-        const alg = Object.assign(createAlgorithm(key), key === 'mala' ? { epsilon: 0.01 } : {});
+        const alg = new Simulation(dist, key, 99).algorithm;
         const rng = mulberry32(99);
         let q = { x: b.xMax - 5e-4, y: (b.yMin + b.yMax) / 2 };
         const start = q;

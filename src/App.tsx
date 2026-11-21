@@ -36,16 +36,21 @@ function App() {
     return () => simulation.pause();
   }, [simulation]);
 
-  // Trajectory animation runs at its own speed and only re-renders when it advances.
+  const { trajectoryPath, trajectoryAnimationSpeed, animateTrajectory } = simulation.visualizer;
   useEffect(() => {
-    let timeoutId: number | undefined;
-    const tick = () => {
-      if (simulation.visualizer.advanceTrajectoryAnimation()) simulation.notify();
-      timeoutId = window.setTimeout(tick, simulation.visualizer.trajectoryAnimationSpeed);
+    const v = simulation.visualizer;
+    if (!v.isTrajectoryAnimating()) return;
+
+    const advance = () => {
+      if (v.advanceTrajectoryAnimation()) simulation.notify();
     };
-    tick();
-    return () => window.clearTimeout(timeoutId);
-  }, [simulation]);
+    if (!animateTrajectory || trajectoryAnimationSpeed === 0) {
+      advance();
+      return;
+    }
+    const timer = window.setTimeout(advance, trajectoryAnimationSpeed);
+    return () => window.clearTimeout(timer);
+  }, [simulation, trajectoryPath, trajectoryAnimationSpeed, animateTrajectory]);
 
   useEffect(() => {
     const v = simulation.visualizer;
