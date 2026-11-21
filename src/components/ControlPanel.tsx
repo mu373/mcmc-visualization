@@ -1,67 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
 import type { Simulation } from '../core/Simulation';
-import { ALGORITHMS, createAlgorithm, type AlgorithmType } from '../algorithms';
+import { ALGORITHMS, ALGORITHM_KEYS, type AlgorithmType } from '../algorithms';
 import type { RandomWalkMH } from '../algorithms/RandomWalkMH';
 import type { HamiltonianMC } from '../algorithms/HamiltonianMC';
 import type { NUTS } from '../algorithms/NUTS';
 import type { GibbsSampler } from '../algorithms/GibbsSampler';
 import type { LangevinMC } from '../algorithms/LangevinMC';
-import { StandardGaussian } from '../distributions/StandardGaussian';
-import { DonutDistribution } from '../distributions/DonutDistribution';
-import { BimodalDistribution } from '../distributions/BimodalDistribution';
-import { BananaDistribution } from '../distributions/BananaDistribution';
-import { RastriginDistribution } from '../distributions/RastriginDistribution';
-import { RosenbrockDistribution } from '../distributions/RosenbrockDistribution';
-import { AckleyDistribution } from '../distributions/AckleyDistribution';
-import { SquiggleDistribution } from '../distributions/SquiggleDistribution';
-import { MultimodalDistribution } from '../distributions/MultimodalDistribution';
-import { QuarticGaussian } from '../distributions/QuarticGaussian';
+import { DISTRIBUTIONS, DISTRIBUTION_KEYS, type DistributionKey } from '../distributions/presets';
+import { chainToCsv, csvFilename } from '../core/csv';
 
-// Distribution presets
-const DISTRIBUTIONS = {
-  gaussian: () => new StandardGaussian(),
-  quartic: () => new QuarticGaussian(),
-  donut: () => new DonutDistribution(2, 0.4),
-  bimodal: () => new BimodalDistribution(3, 0.8),
-  banana: () => new BananaDistribution(1, 1),
-  rastrigin: () => new RastriginDistribution(10, 0.1),
-  rosenbrock: () => new RosenbrockDistribution(1, 100, 0.02),
-  ackley: () => new AckleyDistribution(20, 0.2, 2 * Math.PI, 0.3),
-  squiggle: () => new SquiggleDistribution(5),
-  multimodal: () => new MultimodalDistribution(),
-};
-
-// Map distribution names to keys
-const DISTRIBUTION_NAME_TO_KEY: Record<string, keyof typeof DISTRIBUTIONS> = {
-  'Standard Gaussian': 'gaussian',
-  'Quartic Gaussian': 'quartic',
-  'Donut': 'donut',
-  'Bimodal': 'bimodal',
-  'Banana': 'banana',
-  'Rastrigin': 'rastrigin',
-  'Rosenbrock': 'rosenbrock',
-  'Ackley': 'ackley',
-  'Squiggle': 'squiggle',
-  'Multimodal': 'multimodal',
-};
-
-// Map algorithm names to keys
-const ALGORITHM_NAME_TO_KEY: Record<string, AlgorithmType> = {
-  'Random Walk Metropolis-Hastings': 'rwmh',
-  'Hamiltonian Monte Carlo': 'hmc',
-  'No-U-Turn Sampler': 'nuts',
-  'Gibbs Sampler': 'gibbs',
-  'Metropolis-adjusted Langevin': 'mala',
-};
+function downloadCsv(simulation: Simulation) {
+  const url = URL.createObjectURL(new Blob([chainToCsv(simulation)], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = csvFilename(simulation);
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface ControlPanelProps {
   simulation: Simulation;
-  onDistributionChange?: () => void;
   collapsed?: boolean;
 }
 
-export function ControlPanel({ simulation, onDistributionChange, collapsed = false }: ControlPanelProps) {
+export function ControlPanel({ simulation, collapsed = false }: ControlPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paneRef = useRef<any>(null);
@@ -96,7 +59,7 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
     // Simulation controls
     const simFolder = pane.addFolder({ title: 'Simulation' });
 
-    simFolder.addButton({ title: 'Play/Pause' }).on('click', () => {
+    const playButton = simFolder.addButton({ title: simulation.isRunning ? 'Pause' : 'Play' }).on('click', () => {
       simulation.toggle();
     });
 
@@ -109,27 +72,7 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
     });
 
     simFolder.addButton({ title: 'Export samples' }).on('click', () => {
-      const samples = simulation.visualizer.allSamples;
-      if (samples.length === 0) return;
-
-      // Build CSV content
-      const header = 'x,y\n';
-      const rows = samples.map(s => `${s.x},${s.y}`).join('\n');
-      const csv = header + rows;
-
-      // Build filename with distribution and algorithm
-      const distName = simulation.distribution?.name?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
-      const algName = simulation.algorithm?.name?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
-      const filename = `${distName}_${algName}_n${samples.length}.csv`;
-
-      // Trigger download
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadCsv(simulation);
     });
 
     simFolder.addBinding(simulation, 'delay', {
@@ -139,196 +82,158 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
       label: 'Delay (ms)',
     });
 
-    simFolder.addBinding(simulation, 'totalSamples', {
-      readonly: true,
-      label: 'Total Samples',
+    // A proxy, so a typed seed can be told apart from the seed of a run Reset just started.
+    const run = { seed: simulation.seed };
+    simFolder.addBinding(run, 'seed', {
+      label: 'Seed',
+      min: 0,
+      max: 4294967295,
+      step: 1,
+      format: (v: number) => v.toFixed(0),
+    }).on('change', (e: { value: number }) => {
+      if (e.value !== simulation.seed) simulation.setSeed(e.value);
     });
 
-    // Distribution selector
-    const distFolder = pane.addFolder({ title: 'Distribution' });
-    const currentDistKey = simulation.distribution
-      ? DISTRIBUTION_NAME_TO_KEY[simulation.distribution.name] || 'gaussian'
-      : 'gaussian';
-    const distParams = { selected: currentDistKey };
+    simFolder.addBinding(simulation, 'iterations', {
+      readonly: true,
+      label: 'Iterations',
+      format: (v: number) => v.toFixed(0),
+    });
 
+    const distFolder = pane.addFolder({ title: 'Distribution' });
+    const distParams = { selected: simulation.distributionKey };
     distFolder.addBinding(distParams, 'selected', {
       label: 'Target',
-      options: {
-        'Gaussian': 'gaussian',
-        'Quartic': 'quartic',
-        'Bimodal': 'bimodal',
-        'Multimodal': 'multimodal',
-        'Banana': 'banana',
-        'Donut': 'donut',
-        'Squiggle': 'squiggle',
-        'Rosenbrock': 'rosenbrock',
-        'Rastrigin': 'rastrigin',
-        'Ackley': 'ackley',
-      },
-    }).on('change', (e: { value: keyof typeof DISTRIBUTIONS }) => {
-      const newDist = DISTRIBUTIONS[e.value]();
-      simulation.setDistribution(newDist);
-      simulation.reset();
-      onDistributionChange?.();
+      options: Object.fromEntries(DISTRIBUTION_KEYS.map(k => [DISTRIBUTIONS[k].label, k])),
+    }).on('change', (e: { value: DistributionKey }) => {
+      simulation.setDistribution(e.value);
     });
 
-    // Algorithm selector and parameters
     const algFolder = pane.addFolder({ title: 'Algorithm' });
-
-    // Build algorithm options
-    const algorithmOptions: Record<string, AlgorithmType> = {};
-    ALGORITHMS.forEach(a => {
-      algorithmOptions[a.name] = a.key;
-    });
-
-    const currentAlgKey = simulation.algorithm
-      ? ALGORITHM_NAME_TO_KEY[simulation.algorithm.name] || 'rwmh'
-      : 'rwmh';
-    const algParams = { selected: currentAlgKey as AlgorithmType };
+    const algParams = { selected: simulation.algorithm.key as AlgorithmType };
 
     // Parameter folder (will be rebuilt when algorithm changes)
     let paramFolder = pane.addFolder({ title: 'Parameters' });
 
-    // Stats for acceptance rate
-    const stats = { acceptanceRate: 0 };
-
-    // Function to rebuild parameter controls for current algorithm
     const rebuildParams = () => {
-      // Remove old parameter folder and create new one
       paramFolder.dispose();
       paramFolder = pane.addFolder({ title: 'Parameters', index: 3 });
 
       const algorithm = simulation.algorithm;
-      if (!algorithm) return;
+      simulation.visualizer.showSigmaRings = algorithm.key === 'rwmh';
 
-      if (algorithm.name === 'Random Walk Metropolis-Hastings') {
-        const mh = algorithm as RandomWalkMH;
-        paramFolder.addBinding(mh, 'sigma', {
-          min: 0.05,
-          max: 3,
-          step: 0.05,
-          label: 'Step Size (σ)',
-        }).on('change', (e: { value: number }) => {
-          simulation.visualizer.proposalRadius = e.value;
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showSigmaRings', {
-          label: 'Show Step σ',
-        });
-      } else {
-        // Hide sigma ring for non-RWMH algorithms
-        simulation.visualizer.showSigmaRings = false;
+      switch (algorithm.key) {
+        case 'rwmh': {
+          const mh = algorithm as RandomWalkMH;
+          paramFolder.addBinding(mh, 'sigma', {
+            min: 0.05,
+            max: 3,
+            step: 0.05,
+            label: 'Step Size (σ)',
+          }).on('change', (e: { value: number }) => {
+            simulation.visualizer.proposalRadius = e.value;
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showSigmaRings', {
+            label: 'Show Step σ',
+          });
+          break;
+        }
+        case 'hmc': {
+          const hmc = algorithm as HamiltonianMC;
+          paramFolder.addBinding(hmc, 'epsilon', {
+            min: 0.01,
+            max: 0.5,
+            step: 0.01,
+            label: 'Leapfrog Δt',
+          });
+          paramFolder.addBinding(hmc, 'L', {
+            min: 5,
+            max: 100,
+            step: 5,
+            label: 'Leapfrog steps',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showMomentum', {
+            label: 'Show momentum',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
+            label: 'Show leapfrog points',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'animateTrajectory', {
+            label: 'Animate trajectory',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'trajectoryAnimationSpeed', {
+            min: 0,
+            max: 300,
+            step: 10,
+            label: 'Animation speed (ms)',
+          });
+          break;
+        }
+        case 'nuts': {
+          const nuts = algorithm as NUTS;
+          paramFolder.addBinding(nuts, 'epsilon', {
+            min: 0.01,
+            max: 0.5,
+            step: 0.01,
+            label: 'Step Size (ε)',
+          });
+          paramFolder.addBinding(nuts, 'maxTreeDepth', {
+            min: 3,
+            max: 15,
+            step: 1,
+            label: 'Max Tree Depth',
+          });
+          break;
+        }
+        case 'gibbs': {
+          const gibbs = algorithm as GibbsSampler;
+          paramFolder.addBinding(gibbs, 'gridResolution', {
+            min: 50,
+            max: 500,
+            step: 50,
+            label: 'Grid Resolution',
+          });
+          break;
+        }
+        case 'mala': {
+          const mala = algorithm as LangevinMC;
+          paramFolder.addBinding(mala, 'epsilon', {
+            min: 0.01,
+            max: 3.0,
+            step: 0.01,
+            label: 'Step Size (ε)',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showLangevinGradient', {
+            label: 'Show gradient',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showLangevinDrift', {
+            label: 'Show drift',
+          });
+          paramFolder.addBinding(simulation.visualizer, 'showLangevinNoise', {
+            label: 'Show noise',
+          });
+          break;
+        }
       }
 
-      if (algorithm.name === 'Hamiltonian Monte Carlo') {
-        const hmc = algorithm as HamiltonianMC;
-        paramFolder.addBinding(hmc, 'epsilon', {
-          min: 0.01,
-          max: 0.5,
-          step: 0.01,
-          label: 'Leapfrog Δt',
-        });
-        paramFolder.addBinding(hmc, 'L', {
-          min: 5,
-          max: 100,
-          step: 5,
-          label: 'Leapfrog steps',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showMomentum', {
-          label: 'Show momentum',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
-          label: 'Show leapfrog points',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'animateTrajectory', {
-          label: 'Animate trajectory',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'trajectoryAnimationSpeed', {
-          min: 0,
-          max: 300,
-          step: 10,
-          label: 'Animation speed (ms)',
-        });
-      } else if (algorithm.name === 'No-U-Turn Sampler') {
-        const nuts = algorithm as NUTS;
-        paramFolder.addBinding(nuts, 'epsilon', {
-          min: 0.01,
-          max: 0.5,
-          step: 0.01,
-          label: 'Step Size (ε)',
-        });
-        paramFolder.addBinding(nuts, 'maxTreeDepth', {
-          min: 3,
-          max: 15,
-          step: 1,
-          label: 'Max Tree Depth',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showMomentum', {
-          label: 'Show momentum',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showLeapfrogPoints', {
-          label: 'Show leapfrog points',
-        });
-      } else if (algorithm.name === 'Gibbs Sampler') {
-        const gibbs = algorithm as GibbsSampler;
-        paramFolder.addBinding(gibbs, 'gridResolution', {
-          min: 50,
-          max: 500,
-          step: 50,
-          label: 'Grid Resolution',
-        });
-      } else if (algorithm.name === 'Metropolis-adjusted Langevin') {
-        const mala = algorithm as LangevinMC;
-        paramFolder.addBinding(mala, 'epsilon', {
-          min: 0.01,
-          max: 3.0,
-          step: 0.01,
-          label: 'Step Size (ε)',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showLangevinGradient', {
-          label: 'Show gradient',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showLangevinDrift', {
-          label: 'Show drift',
-        });
-        paramFolder.addBinding(simulation.visualizer, 'showLangevinNoise', {
-          label: 'Show noise',
-        });
-      }
-
-      // Add acceptance rate (not applicable for Gibbs)
-      if (algorithm.name !== 'Gibbs Sampler') {
-        paramFolder.addBinding(stats, 'acceptanceRate', {
+      if (algorithm.rateLabel) {
+        paramFolder.addBinding(simulation, 'rate', {
           readonly: true,
-          label: 'Accept Rate',
+          label: `${algorithm.rateLabel} Rate`,
           format: (v: number) => `${(v * 100).toFixed(1)}%`,
         });
       }
     };
 
-    // Algorithm selector
     algFolder.addBinding(algParams, 'selected', {
       label: 'Method',
-      options: algorithmOptions,
+      options: Object.fromEntries(ALGORITHM_KEYS.map(k => [ALGORITHMS[k].name, k])),
     }).on('change', (e: { value: AlgorithmType }) => {
-      const newAlgorithm = createAlgorithm(e.value);
-      simulation.setAlgorithm(newAlgorithm);
-      simulation.reset();
+      simulation.setAlgorithm(e.value);
       rebuildParams();
     });
 
-    // Initial parameter setup
     rebuildParams();
-
-    // Update acceptance rate periodically
-    const updateInterval = setInterval(() => {
-      const alg = simulation.algorithm;
-      if (alg?.getAcceptanceRate) {
-        stats.acceptanceRate = alg.getAcceptanceRate();
-      }
-    }, 100);
-
-    // Store interval for cleanup
-    (pane as unknown as { _acceptRateInterval?: number })._acceptRateInterval = updateInterval;
 
     // Visual settings
     const vizFolder = pane.addFolder({ title: 'Visuals' });
@@ -425,9 +330,21 @@ export function ControlPanel({ simulation, onDistributionChange, collapsed = fal
       label: 'Histogram Bins',
     });
 
+    // Every Tweakpane edit mutates simulation state directly; tell React about it.
+    pane.on('change', () => simulation.notify());
+
+    let runId = simulation.runId;
+    const unsubscribe = simulation.subscribe(() => {
+      playButton.title = simulation.isRunning ? 'Pause' : 'Play';
+      if (simulation.runId !== runId) {
+        runId = simulation.runId;
+        run.seed = simulation.seed;
+        pane.refresh();
+      }
+    });
+
     return () => {
-      const interval = (pane as unknown as { _acceptRateInterval?: number })._acceptRateInterval;
-      if (interval) clearInterval(interval);
+      unsubscribe();
       pane.dispose();
     };
   }, [simulation]);

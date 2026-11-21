@@ -1,29 +1,25 @@
-import { useRef, useEffect } from 'react';
-import type { Vector2 } from '../core/utils';
-import type { Distribution } from '../distributions/Distribution';
-
-interface MarginalHistogramsProps {
-  samples: Vector2[];
-  sampleCount: number;
-  distribution: Distribution;
-  bins?: number;
-  scale?: number;
-  burnIn?: number;
-  excludeBurnIn?: boolean;
-}
+import { useRef, useEffect, useMemo } from 'react';
+import { StatsBadge, type StatsPanelProps } from './StatsBadge';
 
 const BASE_WIDTH = 220;
 const BASE_HEIGHT = 160;
+const CURVE_POINTS = 100;
 
-export function MarginalHistograms({ samples, sampleCount, distribution, bins = 40, scale = 1, burnIn = 0, excludeBurnIn = false }: MarginalHistogramsProps) {
+export function MarginalHistograms(props: StatsPanelProps) {
+  const { histograms, revision, distribution, scale = 1 } = props;
   const CANVAS_WIDTH = BASE_WIDTH * scale;
   const CANVAS_HEIGHT = BASE_HEIGHT * scale;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Filter samples based on burn-in settings
-  // During burn-in: show all samples. After burn-in: exclude burn-in samples
-  const isInBurnIn = samples.length < burnIn;
-  const effectiveSamples = (excludeBurnIn && !isInBurnIn) ? samples.slice(burnIn) : samples;
+  const curves = useMemo(() => {
+    const { xMin, xMax, yMin, yMax } = distribution.bounds;
+    const sample = (f: (v: number) => number, min: number, max: number) =>
+      Array.from({ length: CURVE_POINTS + 1 }, (_, i) => f(min + (i / CURVE_POINTS) * (max - min)));
+    return {
+      x: sample(v => distribution.marginalX(v), xMin, xMax),
+      y: sample(v => distribution.marginalY(v), yMin, yMax),
+    };
+  }, [distribution]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,68 +37,42 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
     const width = CANVAS_WIDTH;
     const height = CANVAS_HEIGHT;
     const histHeight = (height - 30) / 2;
+    const bins = histograms.bins;
 
-    // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Use distribution bounds for range (separate for X and Y)
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
 
     const startX = 30;
     const chartWidth = width - 40;
 
-    // Helper to compute histogram for a given range
-    const computeHist = (values: number[], min: number, max: number) => {
-      const range = max - min || 1;
-      const binWidth = range / bins;
-      const hist = new Array(bins).fill(0);
-
-      values.forEach(v => {
-        const binIndex = Math.floor((v - min) / binWidth);
-        if (binIndex >= 0 && binIndex < bins) {
-          hist[binIndex]++;
-        }
-      });
-
-      return { hist, min, max, maxCount: Math.max(...hist, 1) };
-    };
-
     // Draw a single histogram panel
     const drawPanel = (
       yOffset: number,
       label: string,
-      marginalFn: (v: number) => number,
-      histData: { hist: number[]; min: number; max: number; maxCount: number } | null,
+      counts: Int32Array,
+      pdfValues: number[],
       rangeMin: number,
       rangeMax: number
     ) => {
-      const range = rangeMax - rangeMin || 1;
       const barWidth = chartWidth / bins;
+      const maxCount = Math.max(1, ...counts);
 
-      // Draw histogram bars if we have samples
-      if (histData && histData.maxCount > 0) {
-        histData.hist.forEach((count, i) => {
-          if (count > 0) {
-            const barHeight = (count / histData.maxCount) * (histHeight - 15);
-            const x = startX + i * barWidth;
-            const y = yOffset + histHeight - barHeight;
+      counts.forEach((count, i) => {
+        if (count > 0) {
+          const barHeight = (count / maxCount) * (histHeight - 15);
+          const x = startX + i * barWidth;
+          const y = yOffset + histHeight - barHeight;
 
-            const gradient = ctx.createLinearGradient(0, yOffset + histHeight, 0, y);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(x, y, barWidth - 1, barHeight);
-          }
-        });
-      }
+          const gradient = ctx.createLinearGradient(0, yOffset + histHeight, 0, y);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x, y, barWidth - 1, barHeight);
+        }
+      });
 
-      // Draw theoretical marginal PDF curve
-      const numPoints = 100;
-      const pdfValues: number[] = [];
-      for (let i = 0; i <= numPoints; i++) {
-        const v = rangeMin + (i / numPoints) * range;
-        pdfValues.push(marginalFn(v));
-      }
+      const numPoints = CURVE_POINTS;
       const maxPdf = Math.max(...pdfValues);
 
       if (maxPdf > 0) {
@@ -138,20 +108,9 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
       ctx.textAlign = 'left';
     };
 
-    // Compute histograms if we have samples (using separate ranges for X and Y)
-    const xValues = effectiveSamples.map(s => s.x);
-    const yValues = effectiveSamples.map(s => s.y);
-    const xData = effectiveSamples.length > 0 ? computeHist(xValues, xMin, xMax) : null;
-    const yData = effectiveSamples.length > 0 ? computeHist(yValues, yMin, yMax) : null;
-
-    // Draw X histogram (top) - uses X range
-    drawPanel(5, 'X', (x) => distribution.marginalX(x), xData, xMin, xMax);
-
-    // Draw Y histogram (bottom) - uses Y range
-    drawPanel(histHeight + 20, 'Y', (y) => distribution.marginalY(y), yData, yMin, yMax);
-
-    }, [samples, sampleCount, distribution, bins, scale, CANVAS_WIDTH, CANVAS_HEIGHT, effectiveSamples]);
-
+    drawPanel(5, 'X', histograms.x, curves.x, xMin, xMax);
+    drawPanel(histHeight + 20, 'Y', histograms.y, curves.y, yMin, yMax);
+  }, [histograms, revision, distribution, curves, CANVAS_WIDTH, CANVAS_HEIGHT]);
 
   return (
     <div
@@ -163,25 +122,7 @@ export function MarginalHistograms({ samples, sampleCount, distribution, bins = 
         position: 'relative',
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          textAlign: 'right',
-          fontSize: 10,
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-        }}
-      >
-        {isInBurnIn && burnIn > 0 && (
-          <div style={{ color: '#f97316' }}>
-            Burn-in ({samples.length}/{burnIn})
-          </div>
-        )}
-        <div style={{ color: '#666' }}>
-          n={effectiveSamples.length}
-        </div>
-      </div>
+      <StatsBadge {...props} />
       <canvas
         ref={canvasRef}
         style={{

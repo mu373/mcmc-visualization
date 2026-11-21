@@ -1,33 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Scene } from './components/Scene';
 import { ControlPanel } from './components/ControlPanel';
 import { InfoPanel } from './components/InfoPanel';
 import { MarginalHistograms } from './components/MarginalHistograms';
 import { HeatmapPanel } from './components/HeatmapPanel';
 import { Simulation } from './core/Simulation';
-import { MultimodalDistribution } from './distributions/MultimodalDistribution';
-import { createAlgorithm } from './algorithms';
+import { Histograms } from './core/histogram';
 
 function App() {
   const [simulation] = useState(() => {
-    const sim = new Simulation();
-
-    // Initialize with multimodal distribution
-    const distribution = new MultimodalDistribution();
-    sim.setDistribution(distribution);
-
-    // Initialize with Hamiltonian Monte Carlo algorithm
-    const algorithm = createAlgorithm('hmc');
-    sim.setAlgorithm(algorithm);
+    const sim = new Simulation('multimodal', 'hmc');
     sim.delay = 900; // Slower default for HMC to see trajectory animation
-
-    // Hide heatmap on mobile by default
-    if (window.innerWidth < 768) {
-      sim.visualizer.showHeatmap = false;
-    }
-
+    if (window.innerWidth < 768) sim.visualizer.showHeatmap = false;
     return sim;
   });
+  useSyncExternalStore(simulation.subscribe, simulation.getVersion);
+  const [histograms] = useState(() => new Histograms());
 
   // Control panel collapsed state (collapsed by default on mobile)
   const [controlPanelCollapsed, setControlPanelCollapsed] = useState(() => window.innerWidth < 768);
@@ -43,87 +31,62 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Force re-render when visualization state changes
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((t) => t + 1);
-    }, 16); // ~60fps
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Auto-start simulation on mount
   useEffect(() => {
     simulation.play();
+    return () => simulation.pause();
   }, [simulation]);
 
-  // Trajectory animation driver - runs independently at configurable speed
+  // Trajectory animation runs at its own speed and only re-renders when it advances.
   useEffect(() => {
     let timeoutId: number | undefined;
-    let cancelled = false;
-
     const tick = () => {
-      if (cancelled) return;
-
-      if (simulation.visualizer.isTrajectoryAnimating()) {
-        simulation.visualizer.advanceTrajectoryAnimation();
-      }
-
-      // Always schedule next tick to check for new animations
+      if (simulation.visualizer.advanceTrajectoryAnimation()) simulation.notify();
       timeoutId = window.setTimeout(tick, simulation.visualizer.trajectoryAnimationSpeed);
     };
-
-    // Start the animation tick loop
     tick();
-
-    return () => {
-      cancelled = true;
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-    };
+    return () => window.clearTimeout(timeoutId);
   }, [simulation]);
 
-  // Keyboard shortcuts
   useEffect(() => {
+    const v = simulation.visualizer;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
         simulation.toggle();
       } else if (e.code === 'KeyN') {
         simulation.step();
-      } else if (e.code === 'KeyR') {
-        simulation.visualizer.autoRotate = !simulation.visualizer.autoRotate;
       } else if (e.code === 'KeyC' && e.shiftKey) {
         setControlPanelCollapsed(prev => !prev);
-      } else if (e.code === 'KeyC' && !e.shiftKey) {
-        simulation.visualizer.showContours = !simulation.visualizer.showContours;
-      } else if (e.code === 'Digit3' && e.shiftKey) {
-        // # key (Shift+3)
-        simulation.visualizer.show3D = !simulation.visualizer.show3D;
-      } else if (e.code === 'KeyG') {
-        simulation.visualizer.showGrid = !simulation.visualizer.showGrid;
+      } else {
+        if (e.code === 'KeyR') v.autoRotate = !v.autoRotate;
+        else if (e.code === 'KeyC') v.showContours = !v.showContours;
+        else if (e.code === 'Digit3' && e.shiftKey) v.show3D = !v.show3D;
+        else if (e.code === 'KeyG') v.showGrid = !v.showGrid;
+        else return;
+        simulation.notify();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [simulation]);
 
-  // Get acceptance rate from algorithm
-  const acceptanceRate = simulation.algorithm?.getAcceptanceRate?.() || 0;
+  const v = simulation.visualizer;
+  const from = v.excludeBurnIn ? v.burnIn : 0;
+  histograms.sync(simulation.chain, simulation.distribution.bounds, v.histogramBins, from, simulation.runId);
+  const statsProps = {
+    histograms,
+    revision: histograms.revision,
+    total: simulation.chain.length,
+    burnIn: from,
+    distribution: simulation.distribution,
+    scale: panelScale,
+  };
 
   return (
     <>
       <Scene simulation={simulation} />
       <ControlPanel simulation={simulation} collapsed={controlPanelCollapsed} />
-      <InfoPanel
-        algorithm={simulation.algorithm}
-        samples={simulation.visualizer.allSamples.length}
-        acceptanceRate={acceptanceRate}
-      />
+      <InfoPanel simulation={simulation} used={histograms.count} />
       {(simulation.visualizer.showHeatmap || simulation.visualizer.showHistogram) && (
         <div
           style={{
@@ -137,28 +100,9 @@ function App() {
           }}
         >
           {simulation.visualizer.showHeatmap && (
-            <HeatmapPanel
-              samples={simulation.visualizer.allSamples}
-              sampleCount={simulation.visualizer.allSamples.length}
-              distribution={simulation.distribution!}
-              bins={simulation.visualizer.histogramBins}
-              colorScheme={simulation.visualizer.colorScheme}
-              scale={panelScale}
-              burnIn={simulation.visualizer.burnIn}
-              excludeBurnIn={simulation.visualizer.excludeBurnIn}
-            />
+            <HeatmapPanel {...statsProps} colorScheme={simulation.visualizer.colorScheme} />
           )}
-          {simulation.visualizer.showHistogram && (
-            <MarginalHistograms
-              samples={simulation.visualizer.allSamples}
-              sampleCount={simulation.visualizer.allSamples.length}
-              distribution={simulation.distribution!}
-              bins={simulation.visualizer.histogramBins}
-              scale={panelScale}
-              burnIn={simulation.visualizer.burnIn}
-              excludeBurnIn={simulation.visualizer.excludeBurnIn}
-            />
-          )}
+          {simulation.visualizer.showHistogram && <MarginalHistograms {...statsProps} />}
         </div>
       )}
       <footer

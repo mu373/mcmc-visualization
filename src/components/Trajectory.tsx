@@ -8,17 +8,18 @@ interface TrajectoryProps {
   distribution: Distribution;
   maxDensity: number;
   showPoints?: boolean;
+  diverged?: boolean;
   show3D?: boolean;
 }
 
-export function Trajectory({ path, distribution, maxDensity, showPoints = false, show3D = true }: TrajectoryProps) {
+export function Trajectory({ path, distribution, maxDensity, showPoints = false, diverged = false, show3D = true }: TrajectoryProps) {
   if (!path || path.length < 2) return null;
 
   const linePoints: [number, number, number][] = [];
   const vertexColors: THREE.Color[] = [];
 
-  // Orange color for trajectory
-  const baseColor = new THREE.Color('#ff8c00');
+  // Orange, or red when the integrator blew up
+  const baseColor = new THREE.Color(diverged ? '#ef4444' : '#ff8c00');
 
   path.forEach((p, i) => {
     const normalizedDensity = distribution.density(p) / maxDensity;

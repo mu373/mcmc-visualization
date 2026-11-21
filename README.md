@@ -13,6 +13,8 @@ https://mcmc-visualization.vercel.app/
 
 ## Distributions
 
+Each target is its formula truncated to the plotted box, so every algorithm samples the same distribution.
+
 - Gaussian
 - Quartic Gaussian
 - Bimodal
@@ -38,6 +40,8 @@ https://mcmc-visualization.vercel.app/
 ```bash
 pnpm install
 pnpm dev
+pnpm test        # unit and integration tests
+pnpm test:stat   # statistical checks that the samplers leave each target invariant
 ```
 
 ## Reference

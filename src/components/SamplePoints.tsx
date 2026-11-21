@@ -1,53 +1,49 @@
+import { useLayoutEffect, useRef } from 'react';
+import * as THREE from 'three';
 import type { Distribution } from '../distributions/Distribution';
 import { calcZ, type Vector2 } from '../core/utils';
 
 interface SamplePointsProps {
   points: Vector2[];
+  capacity: number;
   distribution: Distribution;
   maxDensity: number;
-  maxPoints?: number;
   sphereSize?: number;
   show3D?: boolean;
 }
 
-export function SamplePoints({ points, distribution, maxDensity, maxPoints = 300, sphereSize = 1, show3D = true }: SamplePointsProps) {
-  // Only show the last maxPoints samples for performance
-  const start = Math.max(0, points.length - maxPoints);
-  const visiblePoints = points.slice(start);
+const BASE_COLOR = new THREE.Color('#88ccff');
 
-  if (visiblePoints.length === 0) return null;
+// One instanced sphere per visible sample: a single draw call regardless of count.
+// Age fades through color rather than opacity, which instancing cannot vary per point.
+export function SamplePoints({ points, capacity, distribution, maxDensity, sphereSize = 1, show3D = true }: SamplePointsProps) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    if (!mesh.instanceColor) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
+    const matrix = new THREE.Matrix4();
+    const color = new THREE.Color();
+    const n = Math.min(points.length, capacity);
+    const first = points.length - n;
+    for (let i = 0; i < n; i++) {
+      const p = points[first + i];
+      const age = n > 1 ? i / (n - 1) : 1;
+      const s = (0.6 + age * 0.4) * sphereSize;
+      const z = calcZ(distribution.density(p) / maxDensity, show3D) + 0.01;
+      mesh.setMatrixAt(i, matrix.makeScale(s, s, s).setPosition(p.x, z, p.y));
+      mesh.setColorAt(i, color.copy(BASE_COLOR).multiplyScalar(0.25 + 0.75 * age));
+    }
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.instanceColor.needsUpdate = true;
+  });
 
   return (
-    <group>
-      {visiblePoints.map((point, i) => {
-        // Normalize density same as terrain
-        const normalizedDensity = distribution.density(point) / maxDensity;
-        const z = calcZ(normalizedDensity, show3D) + 0.01;
-
-        // Opacity and size based on age: older = more transparent/smaller, newer = more opaque/larger
-        const age = i / visiblePoints.length;
-        const opacity = 0.4 + age * 0.6;
-        const scale = 0.6 + age * 0.4;
-
-        return (
-          <mesh
-            key={`sample-${i}-${points.length}`}
-            position={[point.x, z, point.y]}
-            scale={scale}
-          >
-            <sphereGeometry args={[0.08 * sphereSize, 12, 12]} />
-            <meshStandardMaterial
-              color="#88ccff"
-              emissive="#4488ff"
-              emissiveIntensity={0.4}
-              metalness={0.2}
-              roughness={0.3}
-              transparent
-              opacity={opacity}
-            />
-          </mesh>
-        );
-      })}
-    </group>
+    <instancedMesh key={capacity} ref={ref} args={[undefined, undefined, capacity]} frustumCulled={false}>
+      <sphereGeometry args={[0.08, 12, 12]} />
+      <meshStandardMaterial emissive="#4488ff" emissiveIntensity={0.15} metalness={0.2} roughness={0.3} />
+    </instancedMesh>
   );
 }

@@ -14,6 +14,7 @@ import { MomentumVector } from './MomentumVector';
 import { GradientArrow } from './GradientArrow';
 import { DriftMarker } from './DriftMarker';
 import type { Simulation } from '../core/Simulation';
+import { inView, type Vector2 } from '../core/utils';
 
 interface SceneProps {
   simulation: Simulation;
@@ -37,7 +38,6 @@ export function Scene({ simulation }: SceneProps) {
 
   // Compute maxDensity for consistent height mapping across components
   const maxDensity = useMemo(() => {
-    if (!distribution) return 1;
     const { xMin, xMax, yMin, yMax } = distribution.bounds;
     let max = 0;
     const steps = 30;
@@ -52,20 +52,14 @@ export function Scene({ simulation }: SceneProps) {
     return max || 1;
   }, [distribution]);
 
-  // Filter samples based on burn-in settings
-  // During burn-in: show all samples. After burn-in: exclude burn-in samples
-  const isInBurnIn = visualizer.allSamples.length < visualizer.burnIn;
-  const effectiveSamples = (visualizer.excludeBurnIn && !isInBurnIn)
-    ? visualizer.acceptedSamples.slice(Math.max(0, visualizer.burnIn - (visualizer.allSamples.length - visualizer.acceptedSamples.length)))
-    : visualizer.acceptedSamples;
-
-  if (!distribution) {
-    return (
-      <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>No distribution selected</p>
-      </div>
-    );
-  }
+  // While still in burn-in, show everything; afterwards hide the burn-in rows.
+  const { chain } = simulation;
+  const from = visualizer.excludeBurnIn && chain.length > visualizer.burnIn ? visualizer.burnIn : 0;
+  const visibleSamples = chain.slice(Math.max(from, chain.length - visualizer.maxTrailLength));
+  const shown = (p: Vector2 | null) => (p && inView(p, distribution.bounds) ? p : null);
+  const path = visualizer.trajectoryPath;
+  const firstOut = path ? path.findIndex(p => !inView(p, distribution.bounds)) : -1;
+  const trajectoryPath = path && firstOut >= 0 ? path.slice(0, firstOut) : path;
 
   return (
     <Canvas
@@ -171,10 +165,10 @@ export function Scene({ simulation }: SceneProps) {
 
       {/* Sample points - individual spheres at each sample */}
       <SamplePoints
-        points={effectiveSamples}
+        points={visibleSamples}
+        capacity={visualizer.maxTrailLength}
         distribution={distribution}
         maxDensity={maxDensity}
-        maxPoints={visualizer.maxTrailLength}
         sphereSize={visualizer.sphereSize}
         show3D={visualizer.show3D}
       />
@@ -182,7 +176,7 @@ export function Scene({ simulation }: SceneProps) {
       {/* Sample trail - line connecting samples */}
       {visualizer.showTrail && (
         <SampleTrail
-          points={effectiveSamples}
+          points={visibleSamples}
           distribution={distribution}
           maxDensity={maxDensity}
           show3D={visualizer.show3D}
@@ -191,17 +185,18 @@ export function Scene({ simulation }: SceneProps) {
 
       {/* HMC/NUTS trajectory path */}
       <Trajectory
-        path={visualizer.trajectoryPath}
+        path={trajectoryPath}
         distribution={distribution}
         maxDensity={maxDensity}
         showPoints={visualizer.showLeapfrogPoints}
+        diverged={visualizer.trajectoryDiverged}
         show3D={visualizer.show3D}
       />
 
       {/* HMC momentum vector - shown at trajectory start */}
       {visualizer.showMomentum && (
         <MomentumVector
-          position={visualizer.trajectoryPath?.[0] ?? null}
+          position={trajectoryPath?.[0] ?? null}
           momentum={visualizer.momentum}
           distribution={distribution}
           maxDensity={maxDensity}
@@ -225,7 +220,7 @@ export function Scene({ simulation }: SceneProps) {
       {/* Langevin drift marker - shows drift point and noise radius */}
       <DriftMarker
         currentPosition={visualizer.currentPosition}
-        driftPoint={visualizer.langevinDriftPoint}
+        driftPoint={shown(visualizer.langevinDriftPoint)}
         noiseRadius={visualizer.langevinNoiseRadius}
         distribution={distribution}
         maxDensity={maxDensity}
@@ -237,7 +232,7 @@ export function Scene({ simulation }: SceneProps) {
       {/* Proposal line - from current to proposal */}
       <ProposalLine
         from={visualizer.currentPosition}
-        to={visualizer.proposalPosition}
+        to={shown(visualizer.proposalPosition)}
         distribution={distribution}
         maxDensity={maxDensity}
         show3D={visualizer.show3D}
@@ -245,7 +240,7 @@ export function Scene({ simulation }: SceneProps) {
 
       {/* Proposal ghost - shows proposed position */}
       <ProposalGhost
-        position={visualizer.proposalPosition}
+        position={shown(visualizer.proposalPosition)}
         distribution={distribution}
         maxDensity={maxDensity}
         show3D={visualizer.show3D}
