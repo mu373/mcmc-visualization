@@ -1,4 +1,4 @@
-import { Distribution } from './Distribution';
+import { Distribution, logSumExp } from './Distribution';
 import type { Vector2 } from '../core/utils';
 
 export class BimodalDistribution extends Distribution {
@@ -19,14 +19,23 @@ export class BimodalDistribution extends Distribution {
     this.sigma = sigma;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
+  private componentLogs({ x, y }: Vector2): [number, number] {
     const s2 = this.sigma * this.sigma;
+    const half = this.separation / 2;
+    return [-((x + half) ** 2 + y * y) / (2 * s2), -((x - half) ** 2 + y * y) / (2 * s2)];
+  }
 
-    // Two Gaussian peaks
-    const peak1 = Math.exp(-((x + this.separation/2) ** 2 + y ** 2) / (2 * s2));
-    const peak2 = Math.exp(-((x - this.separation/2) ** 2 + y ** 2) / (2 * s2));
+  // Two equal Gaussian peaks
+  unboundedLogDensity(point: Vector2): number {
+    return logSumExp(this.componentLogs(point));
+  }
 
-    return peak1 + peak2;
+  gradient(point: Vector2): Vector2 {
+    const [l1, l2] = this.componentLogs(point);
+    const w1 = 1 / (1 + Math.exp(l2 - l1));
+    const s2 = this.sigma * this.sigma;
+    const half = this.separation / 2;
+    const mean = w1 * -half + (1 - w1) * half;
+    return { x: -(point.x - mean) / s2, y: -point.y / s2 };
   }
 }

@@ -21,11 +21,13 @@ export class RosenbrockDistribution extends Distribution {
     this.scale = scale;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // Rosenbrock function: f(x,y) = (a-x)² + b(y-x²)²
-    // Global minimum at (a, a²)
-    const f = (this.a - x) ** 2 + this.b * (y - x * x) ** 2;
-    return Math.exp(-this.scale * f);
+  // -scale·f with f(x,y) = (a-x)² + b(y-x²)², minimum at (a, a²)
+  unboundedLogDensity({ x, y }: Vector2): number {
+    return -this.scale * ((this.a - x) ** 2 + this.b * (y - x * x) ** 2);
+  }
+
+  gradient({ x, y }: Vector2): Vector2 {
+    const r = y - x * x;
+    return { x: this.scale * (2 * (this.a - x) + 4 * this.b * x * r), y: -2 * this.scale * this.b * r };
   }
 }

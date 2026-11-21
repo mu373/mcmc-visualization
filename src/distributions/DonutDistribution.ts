@@ -19,12 +19,10 @@ export class DonutDistribution extends Distribution {
     this.width = width;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    const r = Math.sqrt(x * x + y * y);
-    const diff = r - this.radius;
-    // Gaussian ring around radius
-    return Math.exp(-diff * diff / (2 * this.width * this.width));
+  // Gaussian ring around radius
+  unboundedLogDensity({ x, y }: Vector2): number {
+    const diff = Math.sqrt(x * x + y * y) - this.radius;
+    return -diff * diff / (2 * this.width * this.width);
   }
 
   gradient(point: Vector2): Vector2 {

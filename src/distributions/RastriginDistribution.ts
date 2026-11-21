@@ -19,13 +19,15 @@ export class RastriginDistribution extends Distribution {
     this.scale = scale; // Temperature-like parameter to control peak sharpness
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // Rastrigin function: f(x,y) = 2A + (x² - A*cos(2πx)) + (y² - A*cos(2πy))
-    // Convert to density: p(x,y) ∝ exp(-scale * f(x,y))
-    const f = 2 * this.A +
-      (x * x - this.A * Math.cos(2 * Math.PI * x)) +
-      (y * y - this.A * Math.cos(2 * Math.PI * y));
-    return Math.exp(-this.scale * f);
+  // -scale·f with f(x,y) = 2A + (x² - A·cos(2πx)) + (y² - A·cos(2πy))
+  unboundedLogDensity({ x, y }: Vector2): number {
+    const tau = 2 * Math.PI;
+    return -this.scale * (2 * this.A + x * x - this.A * Math.cos(tau * x) + y * y - this.A * Math.cos(tau * y));
+  }
+
+  gradient({ x, y }: Vector2): Vector2 {
+    const tau = 2 * Math.PI;
+    const d = (t: number) => -this.scale * (2 * t + tau * this.A * Math.sin(tau * t));
+    return { x: d(x), y: d(y) };
   }
 }

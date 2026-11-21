@@ -23,15 +23,22 @@ export class AckleyDistribution extends Distribution {
     this.scale = scale;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // Ackley function: f(x,y) = -a·exp(-b·√(½(x²+y²))) - exp(½(cos(cx)+cos(cy))) + a + e
-    // Global minimum at (0, 0) with f(0,0) = 0
-    const sumSq = x * x + y * y;
-    const sumCos = Math.cos(this.c * x) + Math.cos(this.c * y);
-    const f = -this.a * Math.exp(-this.b * Math.sqrt(0.5 * sumSq))
-              - Math.exp(0.5 * sumCos)
-              + this.a + Math.E;
-    return Math.exp(-this.scale * f);
+  // -scale·f with f(x,y) = -a·exp(-b·√(½(x²+y²))) - exp(½(cos(cx)+cos(cy))) + a + e.
+  // exp(-scale·f) does not decay at infinity, so only the truncation makes it normalizable.
+  unboundedLogDensity({ x, y }: Vector2): number {
+    const s = Math.sqrt(0.5 * (x * x + y * y));
+    const f = -this.a * Math.exp(-this.b * s) - Math.exp(0.5 * (Math.cos(this.c * x) + Math.cos(this.c * y))) + this.a + Math.E;
+    return -this.scale * f;
+  }
+
+  gradient({ x, y }: Vector2): Vector2 {
+    const s = Math.sqrt(0.5 * (x * x + y * y));
+    // The cone term has a cusp at the origin; use its zero subgradient there.
+    const cone = s > 0 ? (this.a * this.b * Math.exp(-this.b * s)) / (2 * s) : 0;
+    const wave = 0.5 * this.c * Math.exp(0.5 * (Math.cos(this.c * x) + Math.cos(this.c * y)));
+    return {
+      x: -this.scale * (cone * x + wave * Math.sin(this.c * x)),
+      y: -this.scale * (cone * y + wave * Math.sin(this.c * y)),
+    };
   }
 }

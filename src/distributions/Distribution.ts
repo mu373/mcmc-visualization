@@ -7,55 +7,57 @@ export interface Bounds {
   yMax: number;
 }
 
+// Every preset is the formula below truncated to `bounds`, the displayed rectangle.
 export abstract class Distribution {
   abstract name: string;
   abstract bounds: Bounds;
 
-  // Probability density function
-  abstract density(point: Vector2): number;
+  // Log of the unnormalized density, ignoring the support.
+  abstract unboundedLogDensity(point: Vector2): number;
 
-  // Log density (more numerically stable)
-  logDensity(point: Vector2): number {
-    return Math.log(this.density(point) + 1e-300); // Add small constant to avoid log(0)
+  contains({ x, y }: Vector2): boolean {
+    const b = this.bounds;
+    return x >= b.xMin && x <= b.xMax && y >= b.yMin && y <= b.yMax;
   }
 
-  // Gradient of log density (for HMC)
-  // Default: finite differences (can be overridden for analytical gradients)
-  gradient(point: Vector2, h: number = 0.001): Vector2 {
-    const logDensityX1 = this.logDensity({ x: point.x + h, y: point.y });
-    const logDensityX2 = this.logDensity({ x: point.x - h, y: point.y });
-    const logDensityY1 = this.logDensity({ x: point.x, y: point.y + h });
-    const logDensityY2 = this.logDensity({ x: point.x, y: point.y - h });
+  logDensity(point: Vector2): number {
+    return this.contains(point) ? this.unboundedLogDensity(point) : -Infinity;
+  }
 
+  density(point: Vector2): number {
+    return Math.exp(this.logDensity(point));
+  }
+
+  // Gradient of the unbounded log density, so it stays finite at and beyond the support's edge.
+  gradient(point: Vector2, h: number = 1e-5): Vector2 {
+    const f = (x: number, y: number) => this.unboundedLogDensity({ x, y });
     return {
-      x: (logDensityX1 - logDensityX2) / (2 * h),
-      y: (logDensityY1 - logDensityY2) / (2 * h)
+      x: (f(point.x + h, point.y) - f(point.x - h, point.y)) / (2 * h),
+      y: (f(point.x, point.y + h) - f(point.x, point.y - h)) / (2 * h),
     };
   }
 
-  // Marginal PDF for X (integrate out Y)
-  // Default: numerical integration (can be overridden for analytical forms)
-  marginalX(x: number, steps: number = 100): number {
+  marginalX(x: number, steps: number = 1000): number {
     const { yMin, yMax } = this.bounds;
     const dy = (yMax - yMin) / steps;
     let sum = 0;
-    for (let i = 0; i < steps; i++) {
-      const y = yMin + (i + 0.5) * dy;
-      sum += this.density({ x, y });
-    }
+    for (let i = 0; i < steps; i++) sum += this.density({ x, y: yMin + (i + 0.5) * dy });
     return sum * dy;
   }
 
-  // Marginal PDF for Y (integrate out X)
-  // Default: numerical integration (can be overridden for analytical forms)
-  marginalY(y: number, steps: number = 100): number {
+  marginalY(y: number, steps: number = 1000): number {
     const { xMin, xMax } = this.bounds;
     const dx = (xMax - xMin) / steps;
     let sum = 0;
-    for (let i = 0; i < steps; i++) {
-      const x = xMin + (i + 0.5) * dx;
-      sum += this.density({ x, y });
-    }
+    for (let i = 0; i < steps; i++) sum += this.density({ x: xMin + (i + 0.5) * dx, y });
     return sum * dx;
   }
+}
+
+export function logSumExp(values: number[]): number {
+  const m = Math.max(...values);
+  if (m === -Infinity) return -Infinity;
+  let s = 0;
+  for (const v of values) s += Math.exp(v - m);
+  return m + Math.log(s);
 }

@@ -10,11 +10,10 @@ export class QuarticGaussian extends Distribution {
     yMax: 2.5
   };
 
-  density(point: Vector2): number {
-    const { x, y } = point;
+  // -(x² + y²)²: flatter top, sharper falloff than Gaussian
+  unboundedLogDensity({ x, y }: Vector2): number {
     const r2 = x * x + y * y;
-    // exp(-(x² + y²)²) - flatter top, sharper falloff than Gaussian
-    return Math.exp(-r2 * r2);
+    return -r2 * r2;
   }
 
   // Analytical gradient: ∇ log p = -4(x² + y²)(x, y)

@@ -10,10 +10,8 @@ export class StandardGaussian extends Distribution {
     yMax: 4
   };
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // 2D standard normal: exp(-0.5 * (x² + y²))
-    return Math.exp(-0.5 * (x * x + y * y));
+  unboundedLogDensity({ x, y }: Vector2): number {
+    return -0.5 * (x * x + y * y);
   }
 
   // Analytical gradient for better performance

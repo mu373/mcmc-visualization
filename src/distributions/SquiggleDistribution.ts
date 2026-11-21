@@ -23,18 +23,10 @@ export class SquiggleDistribution extends Distribution {
     this.frequency = frequency;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // Transform: y' = y + sin(freq * x)
-    const y0 = x;
+  // Normal -0.5·uᵀΣ⁻¹u in u = (x, y + sin(freq·x))
+  unboundedLogDensity({ x, y }: Vector2): number {
     const y1 = y + Math.sin(this.frequency * x);
-
-    // Multivariate normal: exp(-0.5 * yᵀ Σ⁻¹ y)
-    const quad = this.invCov00 * y0 * y0
-               + 2 * this.invCov01 * y0 * y1
-               + this.invCov11 * y1 * y1;
-
-    return Math.exp(-0.5 * quad);
+    return -0.5 * (this.invCov00 * x * x + 2 * this.invCov01 * x * y1 + this.invCov11 * y1 * y1);
   }
 
   // Analytical gradient for better HMC performance

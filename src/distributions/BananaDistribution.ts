@@ -19,12 +19,12 @@ export class BananaDistribution extends Distribution {
     this.b = b;
   }
 
-  density(point: Vector2): number {
-    const { x, y } = point;
-    // Banana-shaped distribution (transformed Gaussian)
-    // Similar to Rosenbrock function
-    const term1 = (this.a - x) ** 2;
-    const term2 = this.b * (y - x * x) ** 2;
-    return Math.exp(-(term1 + term2) / 2);
+  unboundedLogDensity({ x, y }: Vector2): number {
+    return -((this.a - x) ** 2 + this.b * (y - x * x) ** 2) / 2;
+  }
+
+  gradient({ x, y }: Vector2): Vector2 {
+    const r = y - x * x;
+    return { x: this.a - x + 2 * this.b * x * r, y: -this.b * r };
   }
 }
