@@ -94,6 +94,10 @@ export function ControlPanel({ simulation, collapsed = false }: ControlPanelProp
       if (e.value !== simulation.seed) simulation.setSeed(e.value);
     });
 
+    simFolder.addButton({ title: 'Replay seed' }).on('click', () => {
+      simulation.setSeed(simulation.seed);
+    });
+
     simFolder.addBinding(simulation, 'iterations', {
       readonly: true,
       label: 'Iterations',
@@ -333,11 +337,17 @@ export function ControlPanel({ simulation, collapsed = false }: ControlPanelProp
     // Every Tweakpane edit mutates simulation state directly; tell React about it.
     pane.on('change', () => simulation.notify());
 
-    let runId = simulation.runId;
+    // Keyboard shortcuts flip these outside the pane, so their checkboxes need a refresh.
+    const shortcutState = () => {
+      const v = simulation.visualizer;
+      return `${simulation.runId}|${v.autoRotate}|${v.showContours}|${v.show3D}|${v.showGrid}`;
+    };
+    let shown = shortcutState();
     const unsubscribe = simulation.subscribe(() => {
       playButton.title = simulation.isRunning ? 'Pause' : 'Play';
-      if (simulation.runId !== runId) {
-        runId = simulation.runId;
+      const state = shortcutState();
+      if (state !== shown) {
+        shown = state;
         run.seed = simulation.seed;
         pane.refresh();
       }
