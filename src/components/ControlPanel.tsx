@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pane } from 'tweakpane';
 import type { Simulation } from '../core/Simulation';
 import { ALGORITHMS, ALGORITHM_KEYS, type AlgorithmType } from '../algorithms';
@@ -29,13 +29,6 @@ export function ControlPanel({ simulation, collapsed = false }: ControlPanelProp
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paneRef = useRef<any>(null);
 
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // Handle collapsed state changes
   useEffect(() => {
     if (paneRef.current) {
@@ -49,7 +42,7 @@ export function ControlPanel({ simulation, collapsed = false }: ControlPanelProp
     // Create pane - using any type since Tweakpane types are incomplete
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pane: any = new Pane({
-      title: isMobile ? '' : 'MCMC Controls',
+      title: 'MCMC Controls',
       container: containerRef.current,
       expanded: !collapsed,
     });
@@ -359,15 +352,5 @@ export function ControlPanel({ simulation, collapsed = false }: ControlPanelProp
     };
   }, [simulation]);
 
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'absolute',
-        top: '20px',
-        right: '20px',
-        zIndex: 1000,
-      }}
-    />
-  );
+  return <div ref={containerRef} className="control-panel" />;
 }
